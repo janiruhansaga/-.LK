@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ඕලිඳ කෙළිය - Olinda Keliya</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --wood-dark: #3b1c09;
+            --wood-mid:  #6b3a1f;
+            --wood-lite: #a25929;
+            --wood-gold: #c87941;
+            --pit-bg:    #1a0800;
+            --gold:      #FFD700;
+            --p1:        #e85d04;
+            --p2:        #4361ee;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(160deg, #120500 0%, #280e04 40%, #1a0800 70%, #0d0300 100%);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            font-family: 'Noto Sans Sinhala', sans-serif;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 8px;
+            user-select: none;
+        }
+
+        /* ── SCREENS ────────────────────────── */
+        .screen {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center; padding: 20px; z-index: 200;
+        }
+        #start-screen { background: linear-gradient(160deg, #120500, #280e04, #120500); }
+        #result-screen { background: rgba(8,2,0,0.97); backdrop-filter: blur(20px); display:none; }
+
+        .stitle {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: clamp(1.6rem,5vw,3.2rem);
+            color: var(--gold);
+            text-shadow: 0 0 30px rgba(255,215,0,0.5), 0 0 60px rgba(255,215,0,0.2);
+            margin-bottom: 4px;
+        }
+        .ssi { font-size: clamp(1.1rem,3vw,1.8rem); color: #f97316; margin-bottom: 18px; }
+
+        .rules-box {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,215,0,0.18);
+            border-radius: 14px; padding: 14px 24px;
+            margin-bottom: 20px; max-width: 460px; text-align: left;
+        }
+        .rules-box h3 { color: #fde68a; font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 10px; }
+        .rules-box li { color: #cbd5e1; font-size: 0.82rem; line-height: 1.9; list-style: none; }
+
+        .btn {
+            background: linear-gradient(135deg, #b45309, #d97706);
+            color: #fff; border: 2px solid var(--gold);
+            padding: 11px 34px; border-radius: 50px;
+            font-size: 1rem; font-weight: 700; cursor: pointer;
+            font-family: 'Noto Sans Sinhala', sans-serif;
+            box-shadow: 0 0 18px rgba(255,215,0,0.35);
+            transition: transform 0.17s, box-shadow 0.17s;
+            margin: 6px; display: inline-block; text-decoration: none;
+        }
+        .btn:hover { transform: scale(1.06); box-shadow: 0 0 30px rgba(255,215,0,0.55); }
+        .btn.sec { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.28); box-shadow: none; }
+
+        /* ── MENU BTN (in-game) ─────────────── */
+        #menu-btn {
+            position: fixed; top: 10px; left: 10px; z-index: 300;
+            background: rgba(0,0,0,0.7); border: 1px solid rgba(255,215,0,0.4);
+            color: var(--gold); padding: 6px 14px; border-radius: 50px;
+            font-weight: 700; text-decoration: none; display: none;
+            align-items: center; gap: 6px; backdrop-filter: blur(8px);
+            font-size: 0.85rem; cursor: pointer; transition: background 0.25s;
+        }
+        #menu-btn:hover { background: rgba(255,215,0,0.15); }
+
+        /* ── GAME AREA ──────────────────────── */
+        #game-area {
+            display: none; flex-direction: column;
+            align-items: center; gap: 10px;
+            width: 100%; max-width: 920px;
+        }
+
+        /* ── SCORE BAR ──────────────────────── */
+        #score-bar {
+            width: 100%; display: flex;
+            align-items: center; justify-content: space-between;
+            background: rgba(0,0,0,0.45);
+            border: 1px solid rgba(255,215,0,0.18);
+            border-radius: 12px; padding: 8px 18px;
+            backdrop-filter: blur(8px);
+        }
+        .pinfo { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .pname { font-size: 0.72rem; color: #7f8ea3; letter-spacing: 1px; text-transform: uppercase; }
+        .pscore { font-size: 1.9rem; font-weight: 900; }
+        .p1sc { color: var(--p1); text-shadow: 0 0 12px var(--p1); }
+        .p2sc { color: var(--p2); text-shadow: 0 0 12px var(--p2); }
+
+        #turn-box { text-align: center; }
+        #turn-label { font-size: 0.72rem; color: var(--gold); letter-spacing: 1px; }
+        #turn-name  { font-size: 1.1rem; font-weight: 900; margin-top: 2px; }
+        #turn-name.p1 { color: var(--p1); }
+        #turn-name.p2 { color: var(--p2); }
+        #extra-turn-badge {
+            font-size: 0.68rem; background: var(--gold);
+            color: #000; border-radius: 50px; padding: 1px 8px;
+            font-weight: 700; margin-top: 2px; display: none;
+        }
+
+        /* ── BOARD ──────────────────────────── */
+        #board {
+            width: 100%; position: relative;
+            background:
+                repeating-linear-gradient(90deg,
+                    transparent, transparent 36px,
+                    rgba(0,0,0,0.06) 36px, rgba(0,0,0,0.06) 37px),
+                repeating-linear-gradient(0deg,
+                    transparent, transparent 55px,
+                    rgba(255,255,255,0.025) 55px, rgba(255,255,255,0.025) 56px),
+                linear-gradient(150deg, #7a4022 0%, #9a5228 18%, #b06030 36%, #8b4a24 55%, #7a4022 75%, #6b3a1f 100%);
+            border-radius: 22px;
+            border: 4px solid var(--wood-gold);
+            box-shadow:
+                0 0 0 2px var(--wood-dark),
+                0 0 0 5px var(--wood-gold),
+                0 0 0 6px var(--wood-dark),
+                0 25px 70px rgba(0,0,0,0.85),
+                inset 0 2px 5px rgba(255,255,255,0.06),
+                inset 0 -3px 6px rgba(0,0,0,0.4);
+            display: grid;
+            grid-template-columns: clamp(44px,10vw,88px) repeat(7, 1fr) clamp(44px,10vw,88px);
+            grid-template-rows: 1fr 1fr;
+            gap: clamp(3px,1.2vw,8px);
+            padding: clamp(6px,1.5vw,12px);
+        }
+
+        /* Centre divider line */
+        #board::before {
+            content: '';
+            position: absolute;
+            left: 100px; right: 100px;
+            top: 50%; transform: translateY(-50%);
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(200,120,65,0.55), transparent);
+            pointer-events: none;
+        }
+
+        /* Corner ornaments */
+        #board::after {
+            content: '';
+            position: absolute; inset: 10px;
+            border: 1px solid rgba(200,120,65,0.18);
+            border-radius: 14px; pointer-events: none;
+        }
+
+        /* ── PIT ────────────────────────────── */
+        .pit {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: radial-gradient(circle at 38% 32%, #2a1006, #100500 65%, #060200);
+            box-shadow:
+                inset 0 5px 16px rgba(0,0,0,0.95),
+                inset 0 2px 5px rgba(0,0,0,0.8),
+                0 2px 5px rgba(200,120,65,0.25);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+            cursor: default;
+            transition: transform 0.14s, box-shadow 0.14s;
+            min-width: 0;
+            border: 2px solid transparent;
+        }
+        .pit.can-click {
+            cursor: pointer;
+        }
+        .pit.can-click:hover {
+            transform: scale(1.1);
+            box-shadow:
+                inset 0 5px 16px rgba(0,0,0,0.9),
+                0 0 18px rgba(255,215,0,0.55),
+                0 2px 5px rgba(200,120,65,0.25);
+        }
+        .pit.p1hl { border-color: rgba(232,93,4,0.7);  box-shadow: inset 0 5px 16px rgba(0,0,0,0.9), 0 0 12px rgba(232,93,4,0.4); }
+        .pit.p2hl { border-color: rgba(67,97,238,0.7);  box-shadow: inset 0 5px 16px rgba(0,0,0,0.9), 0 0 12px rgba(67,97,238,0.4); }
+
+        @keyframes pitFlash {
+            0%   { background: radial-gradient(circle at 38% 32%, #5a2a10, #2d1208 65%); }
+            40%  { background: radial-gradient(circle at 38% 32%, #c87941, #6b3a1f 65%); }
+            100% { background: radial-gradient(circle at 38% 32%, #2a1006, #100500 65%, #060200); }
+        }
+        .pit.flash { animation: pitFlash 0.28s ease-out; }
+
+        .pit-count {
+            font-size: clamp(0.65rem, 2.5vw, 1.45rem);
+            font-weight: 900;
+            color: #fde68a;
+            text-shadow: 0 0 8px rgba(255,215,0,0.4);
+            z-index: 2; line-height: 1;
+        }
+        .pit-count.zero { color: rgba(255,255,255,0.12); font-size: clamp(0.7rem, 1.6vw, 1rem); }
+
+        /* seed dots */
+        .sdots {
+            display: flex; flex-wrap: wrap;
+            justify-content: center; align-items: center;
+            gap: 2px; max-width: 80%;
+            position: absolute; bottom: 8px;
+        }
+        .sd {
+            width: 5px; height: 5px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #e06060, #8b1010);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .sd.b { background: radial-gradient(circle at 35% 35%, #444, #111); }
+
+        @keyframes sdPop {
+            0%   { transform: scale(0) translateY(-4px); opacity: 0; }
+            70%  { transform: scale(1.4) translateY(0); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .sd.new { animation: sdPop 0.22s cubic-bezier(0.34,1.56,0.64,1); }
+
+        /* ── STORE (HOME PIT)─────────────────── */
+        .store {
+            border-radius: 16px;
+            background: radial-gradient(ellipse at 40% 30%, #2a1006, #100500 55%, #060200);
+            box-shadow:
+                inset 0 8px 24px rgba(0,0,0,0.98),
+                inset 0 2px 8px rgba(0,0,0,0.85),
+                0 3px 7px rgba(200,120,65,0.25);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 5px;
+            grid-row: 1 / 3;
+            padding: 6px;
+        }
+        .store-label {
+            font-size: 0.6rem; letter-spacing: 1px;
+            text-transform: uppercase; font-weight: 700;
+            color: rgba(255,255,255,0.25); text-align: center;
+        }
+        .store-count {
+            font-size: clamp(1rem, 3.5vw, 2.4rem);
+            font-weight: 900;
+            line-height: 1;
+        }
+        #p1-store { grid-column: 9; border: 2px solid rgba(232,93,4,0.3); }
+        #p1-store .store-count { color: var(--p1); text-shadow: 0 0 16px var(--p1); }
+        #p2-store { grid-column: 1; border: 2px solid rgba(67,97,238,0.3); }
+        #p2-store .store-count { color: var(--p2); text-shadow: 0 0 16px var(--p2); }
+
+        @keyframes storeFlash {
+            0%  { background: radial-gradient(ellipse at 40% 30%, #6b3a1f, #2d1208 55%); }
+            50% { background: radial-gradient(ellipse at 40% 30%, #c87941, #6b3a1f 55%); }
+            100%{ background: radial-gradient(ellipse at 40% 30%, #2a1006, #100500 55%, #060200); }
+        }
+        .store.flash { animation: storeFlash 0.35s ease-out; }
+
+        /* ── INFO STRIP ─────────────────────── */
+        #info-strip {
+            font-size: 0.72rem; color: rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.2); padding: 5px 14px;
+            border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);
+            text-align: center;
+        }
+
+        /* ── RESULT STATS ───────────────────── */
+        .rstat {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,215,0,0.22);
+            border-radius: 14px; padding: 12px 26px;
+            margin: 5px; display: inline-block;
+            min-width: 120px;
+        }
+        .rstat .rv { font-size: 2rem; font-weight: 900; }
+        .rstat .rl { font-size: 0.72rem; color: #7f8ea3; }
+
+        /* ── RESPONSIVE ─────────────────────── */
+        @media (max-width: 580px) {
+            body { padding: 4px; }
+            #board {
+                border-width: 2px;
+                border-radius: 12px;
+            }
+            .store { border-radius: 8px; padding: 4px; }
+            .store-label { display: none; }
+            #score-bar { padding: 6px 10px; }
+            #game-area { gap: 6px; }
+            #info-strip { font-size: 0.65rem; padding: 4px 10px; }
+        }
+        @media (max-width: 380px) {
+            #board { grid-template-columns: clamp(32px,8vw,50px) repeat(7,1fr) clamp(32px,8vw,50px); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Back button (in-game) -->
+<a href="index" id="menu-btn">◀ මෙනුව</a>
+
+<!-- ══ START SCREEN ══════════════════════════ -->
+<div class="screen" id="start-screen">
+    <div style="font-size:3.2rem;margin-bottom:6px">🌿🏆🌿</div>
+    <div class="stitle">Olinda Keliya</div>
+    <div class="ssi">ඕලිඳ කෙළිය</div>
+
+    <div class="rules-box">
+        <h3>📖 ක්‍රීඩා ක්‍රමය</h3>
+        <ul>
+            <li>🌱 ඔබේ පැත්තේ ගොයම් තිබෙන කොටුවක් ක්ලික් කරන්න</li>
+            <li>⬆️ ගොයම් ඊළඟ කොටු වලට එකින් එක බෙදා හරිනවා</li>
+            <li>🎯 අවසාන ගොයම හිස් කොටුකට ගියොත් —맞ස ගොයම් ගනියි!</li>
+            <li>🏠 ගෙදර (Store) ට ගොයම් ගියොත් — නැවත turn !</li>
+            <li>⏹ ඔබේ පැත්ත සම්පූර්ණයෙන් හිස් වූ විට ක්‍රීඩාව නිමා</li>
+        </ul>
+    </div>
+    <button class="btn" onclick="startGame()">🌿 ක්‍රීඩාව ආරම්භ කරන්න</button>
+    <a href="index" class="btn sec">◀ ප්‍රධාන මෙනුව</a>
+</div>
+
+<!-- ══ RESULT SCREEN ═════════════════════════ -->
+<div class="screen" id="result-screen">
+    <div id="res-emoji" style="font-size:4.5rem;margin-bottom:8px"></div>
+    <div class="stitle" id="res-title"></div>
+    <div class="ssi" id="res-sub"></div>
+    <div style="margin:14px 0">
+        <div class="rstat">
+            <div class="rv" id="rp1" style="color:var(--p1)"></div>
+            <div class="rl">ක්‍රීඩකයා 1</div>
+        </div>
+        <div class="rstat">
+            <div class="rv" id="rp2" style="color:var(--p2)"></div>
+            <div class="rl">ක්‍රීඩකයා 2</div>
+        </div>
+    </div>
+    <button class="btn" onclick="startGame()">🔄 නැවත ක්‍රීඩා කරන්න</button>
+    <a href="index" class="btn sec">◀ ප්‍රධාන මෙනුව</a>
+</div>
+
+<!-- ══ GAME AREA ══════════════════════════════ -->
+<div id="game-area">
+
+    <!-- Score / Turn bar -->
+    <div id="score-bar">
+        <div class="pinfo">
+            <div class="pname">ක්‍රීඩකයා 2</div>
+            <div class="pscore p2sc" id="disp-p2">0</div>
+        </div>
+        <div id="turn-box">
+            <div id="turn-label">දැනට ක්‍රීඩා කරන්නේ</div>
+            <div id="turn-name" class="p1">ක්‍රීඩකයා 1</div>
+            <div id="extra-turn-badge">★ නැවත turn!</div>
+        </div>
+        <div class="pinfo">
+            <div class="pname">ක්‍රීඩකයා 1</div>
+            <div class="pscore p1sc" id="disp-p1">0</div>
+        </div>
+    </div>
+
+    <!-- Board -->
+    <div id="board">
+        <!-- P2 store (left) -->
+        <div class="store" id="p2-store">
+            <div class="store-label">P2<br>ගෙදර</div>
+            <div class="store-count" id="cnt-s15">0</div>
+        </div>
+
+        <!-- P2 pits – top row, displayed left→right = pit14,13,12,11,10,9,8 -->
+        <div class="pit" id="p14" data-i="14" style="grid-row:1;grid-column:2"></div>
+        <div class="pit" id="p13" data-i="13" style="grid-row:1;grid-column:3"></div>
+        <div class="pit" id="p12" data-i="12" style="grid-row:1;grid-column:4"></div>
+        <div class="pit" id="p11" data-i="11" style="grid-row:1;grid-column:5"></div>
+        <div class="pit" id="p10" data-i="10" style="grid-row:1;grid-column:6"></div>
+        <div class="pit" id="p9"  data-i="9"  style="grid-row:1;grid-column:7"></div>
+        <div class="pit" id="p8"  data-i="8"  style="grid-row:1;grid-column:8"></div>
+
+        <!-- P1 pits – bottom row 0,1,2,3,4,5,6 -->
+        <div class="pit" id="p0"  data-i="0"  style="grid-row:2;grid-column:2"></div>
+        <div class="pit" id="p1"  data-i="1"  style="grid-row:2;grid-column:3"></div>
+        <div class="pit" id="p2"  data-i="2"  style="grid-row:2;grid-column:4"></div>
+        <div class="pit" id="p3"  data-i="3"  style="grid-row:2;grid-column:5"></div>
+        <div class="pit" id="p4"  data-i="4"  style="grid-row:2;grid-column:6"></div>
+        <div class="pit" id="p5"  data-i="5"  style="grid-row:2;grid-column:7"></div>
+        <div class="pit" id="p6"  data-i="6"  style="grid-row:2;grid-column:8"></div>
+
+        <!-- P1 store (right) -->
+        <div class="store" id="p1-store">
+            <div class="store-label">P1<br>ගෙදර</div>
+            <div class="store-count" id="cnt-s7">0</div>
+        </div>
+    </div>
+
+    <div id="info-strip">
+        ⬇ P1 = bottom row &nbsp;|&nbsp; ⬆ P2 = top row &nbsp;|&nbsp; සීඩ්ස් ▶ counter-clockwise ▶ ගෙදර &nbsp;|&nbsp; ✊ ක්ලික් → ගොයම් බෙදන්න
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════
+const INIT_SEEDS = 4;
+// Index layout:
+// 0-6: P1 pits, 7: P1 store, 8-14: P2 pits, 15: P2 store
+// Column c (0..6):  bottom = pits[c],   top = pits[14-c]
+// Traversal always increments index mod 16; P1 skips 15, P2 skips 7
+
+let pits = [];
+let curPlayer = 1;      // 1 or 2
+let isAnimating = false;
+let isActive    = false;
+let audioCtx    = null;
+
+// ═══════════════════════════════════
+// AUDIO (Web Audio API clack)
+// ═══════════════════════════════════
+function ac() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+}
+function clack(freq = 460, vol = 0.22) {
+    try {
+        const ctx = ac();
+        const osc = ctx.createOscillator();
+        const g   = ctx.createGain();
+        const f   = ctx.createBiquadFilter();
+        f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 2;
+        osc.connect(f); f.connect(g); g.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.55, ctx.currentTime + 0.09);
+        g.gain.setValueAtTime(0, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.13);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.13);
+    } catch(e) {}
+}
+function captureSound() {
+    clack(280, 0.28);
+    setTimeout(() => clack(360, 0.22), 90);
+    setTimeout(() => clack(520, 0.18), 180);
+}
+function homeSound() { clack(600, 0.2); setTimeout(() => clack(800, 0.18), 80); }
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+function initBoard() {
+    pits = new Array(16).fill(0);
+    for (let i = 0; i <= 6; i++)  pits[i]  = INIT_SEEDS;
+    for (let i = 8; i <= 14; i++) pits[i]  = INIT_SEEDS;
+    pits[7] = pits[15] = 0;
+}
+
+// ═══════════════════════════════════
+// LOGIC
+// ═══════════════════════════════════
+function nextIdx(i, player) {
+    let n = (i + 1) % 16;
+    if (player === 1 && n === 15) n = 0;
+    if (player === 2 && n === 7)  n = 8;
+    return n;
+}
+
+function buildSeq(startI, count, player) {
+    const seq = [];
+    let i = startI;
+    for (let k = 0; k < count; k++) {
+        i = nextIdx(i, player);
+        seq.push(i);
+    }
+    return seq;
+}
+
+// Returns true if capture happened
+function tryCapture(lastI, player) {
+    const p1Range = lastI >= 0  && lastI <= 6;
+    const p2Range = lastI >= 8  && lastI <= 14;
+    if (player === 1 && p1Range && pits[lastI] === 1) {
+        const opp = 14 - lastI;
+        if (pits[opp] > 0) {
+            pits[7]  += pits[opp] + 1;
+            pits[opp] = 0; pits[lastI] = 0;
+            captureSound(); return true;
+        }
+    }
+    if (player === 2 && p2Range && pits[lastI] === 1) {
+        const opp = 14 - lastI;
+        if (pits[opp] > 0) {
+            pits[15] += pits[opp] + 1;
+            pits[opp] = 0; pits[lastI] = 0;
+            captureSound(); return true;
+        }
+    }
+    return false;
+}
+
+function isExtraTurn(lastI, player) {
+    return (player === 1 && lastI === 7) || (player === 2 && lastI === 15);
+}
+
+function checkEnd() {
+    const p1e = pits.slice(0, 7).every(v => v === 0);
+    const p2e = pits.slice(8, 15).every(v => v === 0);
+    if (p1e || p2e) {
+        for (let i = 0; i <= 6; i++)  { pits[7]  += pits[i]; pits[i] = 0; }
+        for (let i = 8; i <= 14; i++) { pits[15] += pits[i]; pits[i] = 0; }
+        return true;
+    }
+    return false;
+}
+
+// ═══════════════════════════════════
+// RENDER
+// ═══════════════════════════════════
+function getEl(i) { return document.getElementById(`p${i}`); }
+
+function renderPit(i) {
+    const el = getEl(i); if (!el) return;
+    const cnt = pits[i];
+
+    // Count
+    let ce = el.querySelector('.pit-count');
+    if (!ce) { ce = document.createElement('div'); ce.className='pit-count'; el.appendChild(ce); }
+    ce.textContent = cnt;
+    ce.className = 'pit-count' + (cnt === 0 ? ' zero' : '');
+
+    // Dots (max 8 shown)
+    let de = el.querySelector('.sdots');
+    if (!de) { de = document.createElement('div'); de.className='sdots'; el.appendChild(de); }
+    de.innerHTML = '';
+    const show = Math.min(cnt, 9);
+    for (let k = 0; k < show; k++) {
+        const d = document.createElement('div');
+        d.className = 'sd' + (k % 2 === 0 ? '' : ' b');
+        de.appendChild(d);
+    }
+}
+
+function renderAllPits() {
+    for (let i = 0; i <= 14; i++) { if (i !== 7) renderPit(i); }
+    document.getElementById('cnt-s7').textContent  = pits[7];
+    document.getElementById('cnt-s15').textContent = pits[15];
+    document.getElementById('disp-p1').textContent = pits[7];
+    document.getElementById('disp-p2').textContent = pits[15];
+}
+
+function flashEl(id, isSeed = false) {
+    const el = document.getElementById(id) || getEl(parseInt(id));
+    if (!el) return;
+    el.classList.remove('flash'); void el.offsetWidth;
+    el.classList.add('flash');
+    el.addEventListener('animationend', () => el.classList.remove('flash'), {once:true});
+}
+
+function setClickable(on) {
+    document.querySelectorAll('.pit').forEach(el => {
+        const i = parseInt(el.dataset.i);
+        el.classList.remove('can-click', 'p1hl', 'p2hl');
+        if (!on) return;
+        const p1 = i >= 0 && i <= 6;
+        const p2 = i >= 8 && i <= 14;
+        if (curPlayer === 1 && p1 && pits[i] > 0) el.classList.add('can-click','p1hl');
+        if (curPlayer === 2 && p2 && pits[i] > 0) el.classList.add('can-click','p2hl');
+    });
+}
+
+function updateTurnUI(extra = false) {
+    const n = document.getElementById('turn-name');
+    n.textContent = curPlayer === 1 ? 'ක්‍රීඩකයා 1' : 'ක්‍රීඩකයා 2';
+    n.className = curPlayer === 1 ? 'p1' : 'p2';
+    document.getElementById('extra-turn-badge').style.display = extra ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════
+// ANIMATION / SOWING
+// ═══════════════════════════════════
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function sow(pitI) {
+    if (isAnimating || !isActive) return;
+    if (pits[pitI] === 0) return;
+    // Ownership check
+    if (curPlayer === 1 && !(pitI >= 0 && pitI <= 6)) return;
+    if (curPlayer === 2 && !(pitI >= 8 && pitI <= 14)) return;
+
+    isAnimating = true;
+    setClickable(false);
+    document.getElementById('extra-turn-badge').style.display = 'none';
+
+    const seedsToSow = pits[pitI];
+    pits[pitI] = 0;
+    renderPit(pitI);
+    await sleep(70);
+
+    const seq = buildSeq(pitI, seedsToSow, curPlayer);
+
+    for (let k = 0; k < seq.length; k++) {
+        await sleep(210);
+        const si = seq[k];
+        pits[si]++;
+        renderPit(si);
+
+        // Flash pit or store
+        if (si === 7 || si === 15) {
+            const storeEl = document.getElementById(si === 7 ? 'p1-store' : 'p2-store');
+            storeEl.classList.remove('flash'); void storeEl.offsetWidth;
+            storeEl.classList.add('flash');
+            storeEl.addEventListener('animationend', () => storeEl.classList.remove('flash'), {once:true});
+            document.getElementById(si === 7 ? 'cnt-s7' : 'cnt-s15').textContent = pits[si];
+            document.getElementById(si === 7 ? 'disp-p1' : 'disp-p2').textContent = pits[si];
+            homeSound();
+        } else {
+            const el = getEl(si);
+            el.classList.remove('flash'); void el.offsetWidth;
+            el.classList.add('flash');
+            el.addEventListener('animationend', () => el.classList.remove('flash'), {once:true});
+            clack(360 + (si % 8) * 18);
+        }
+    }
+
+    await sleep(160);
+
+    // Capture?
+    const lastI = seq[seq.length - 1];
+    const captured = tryCapture(lastI, curPlayer);
+    if (captured) { renderAllPits(); await sleep(500); }
+
+    // Check game end
+    if (checkEnd()) {
+        renderAllPits(); await sleep(300);
+        showResult(); isAnimating = false; return;
+    }
+
+    // Extra turn?
+    const extra = isExtraTurn(lastI, curPlayer);
+    if (!extra) curPlayer = curPlayer === 1 ? 2 : 1;
+
+    isAnimating = false;
+    renderAllPits();
+    updateTurnUI(extra);
+    setClickable(true);
+}
+
+// ═══════════════════════════════════
+// START / RESULT
+// ═══════════════════════════════════
+function startGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('result-screen').style.display = 'none';
+    document.getElementById('game-area').style.display = 'flex';
+    document.getElementById('menu-btn').style.display = 'flex';
+
+    initBoard();
+    curPlayer = 1;
+    isAnimating = false;
+    isActive = true;
+
+    // Attach handlers once
+    document.querySelectorAll('.pit').forEach(el => {
+        el.onclick = () => sow(parseInt(el.dataset.i));
+    });
+
+    renderAllPits();
+    updateTurnUI(false);
+    setClickable(true);
+}
+
+function showResult() {
+    isActive = false;
+    try { new Audio('cele.mp3').play(); } catch(e) {}
+    document.getElementById('game-area').style.display = 'none';
+    document.getElementById('menu-btn').style.display = 'none';
+
+    const p1 = pits[7], p2 = pits[15];
+    const rs = document.getElementById('result-screen');
+    rs.style.display = 'flex';
+    document.getElementById('rp1').textContent = p1;
+    document.getElementById('rp2').textContent = p2;
+
+    if (p1 > p2) {
+        document.getElementById('res-emoji').textContent  = '🏆';
+        document.getElementById('res-title').textContent  = 'ජය!';
+        document.getElementById('res-sub').textContent    = `ක්‍රීඩකයා 1 ජය ගත්තා! (${p1} vs ${p2})`;
+        rs.style.background = 'linear-gradient(160deg,rgba(0,38,0,0.98),rgba(0,0,0,0.98))';
+    } else if (p2 > p1) {
+        document.getElementById('res-emoji').textContent  = '🏆';
+        document.getElementById('res-title').textContent  = 'ජය!';
+        document.getElementById('res-sub').textContent    = `ක්‍රීඩකයා 2 ජය ගත්තා! (${p2} vs ${p1})`;
+        rs.style.background = 'linear-gradient(160deg,rgba(0,0,38,0.98),rgba(0,0,0,0.98))';
+    } else {
+        document.getElementById('res-emoji').textContent  = '🤝';
+        document.getElementById('res-title').textContent  = 'සමතා!';
+        document.getElementById('res-sub').textContent    = `දෙදෙනාටම ${p1} ගොයම් ලැබිලා!`;
+        rs.style.background = 'linear-gradient(160deg,rgba(30,20,0,0.98),rgba(0,0,0,0.98))';
+    }
+}
+</script>
+<footer style="position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-family: sans-serif; font-size: 0.8rem; color: white; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9998; pointer-events: auto;">
+    Developed by <a href="https://janiruhansaga.com/" target="_blank" style="color: #FFD700; text-decoration: none; font-weight: bold;">JAniruhansaga</a>
+</footer>
+</body>
+</html>

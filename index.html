@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="si">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Digital Awurudu 2026 — ඩිජිටල් අවුරුදු</title>
+    <link rel="icon" type="image/jpeg" href="favicon.jpeg">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Gemunu+Libre:wght@400;700;800&family=Noto+Sans+Sinhala:wght@300;400;600;700&family=Playfair+Display:wght@700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* ===== CSS Variables ===== */
+        :root {
+            --deep-red: #8B0000;
+            --dark-red: #5a0000;
+            --darker-red: #1a0505;
+            --bg-base: #0d0303;
+            --gold: #FFD700;
+            --gold-dim: rgba(255, 215, 0, 0.3);
+            --gold-faint: rgba(255, 215, 0, 0.08);
+            --white: #ffffff;
+            --white-dim: #cccccc;
+            --white-muted: #999999;
+            --card-bg: rgba(139, 0, 0, 0.18);
+            --card-border: rgba(255, 215, 0, 0.12);
+            --font-display: 'Gemunu Libre', sans-serif;
+            --font-body: 'Noto Sans Sinhala', sans-serif;
+            --font-latin: 'Playfair Display', serif;
+        }
+
+        /* ===== Reset ===== */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-base);
+            color: var(--white);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* ===== Background Layers ===== */
+        .bg-texture {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background:
+                repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(255, 215, 0, 0.012) 40px, rgba(255, 215, 0, 0.012) 41px),
+                repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(255, 215, 0, 0.012) 40px, rgba(255, 215, 0, 0.012) 41px),
+                radial-gradient(circle 1px at 20px 20px, rgba(255, 215, 0, 0.035), transparent),
+                radial-gradient(circle 1px at 60px 60px, rgba(255, 215, 0, 0.035), transparent),
+                radial-gradient(circle 1px at 40px 0px, rgba(255, 215, 0, 0.02), transparent),
+                linear-gradient(180deg, #0d0303 0%, #1a0505 25%, #200808 55%, #120404 80%, #0d0303 100%);
+            background-size: 80px 80px, 80px 80px, 80px 80px, 80px 80px, 80px 80px, 100% 100%;
+        }
+
+        .bg-noise {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.5;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+        }
+
+        /* ===== Particles ===== */
+        #particles {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.9), rgba(255, 215, 0, 0) 70%);
+            border-radius: 50%;
+            animation: floatParticle var(--dur) var(--del) ease-in-out infinite;
+        }
+
+        @keyframes floatParticle {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(0.5);
+                opacity: 0;
+            }
+
+            15% {
+                opacity: 1;
+            }
+
+            85% {
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: translate(var(--tx), var(--ty)) scale(1.2);
+            }
+        }
+
+        /* ===== Navigation ===== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 16px 32px;
+            transition: background 0.4s, box-shadow 0.4s, padding 0.4s;
+        }
+
+        nav.scrolled {
+            background: rgba(13, 3, 3, 0.92);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 2px 30px rgba(0, 0, 0, 0.5);
+            padding: 10px 32px;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: var(--gold);
+        }
+
+        .nav-logo i {
+            font-size: 1.3rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 28px;
+        }
+
+        .nav-links a {
+            font-size: 0.9rem;
+            color: var(--white-dim);
+            transition: color 0.3s;
+            position: relative;
+            font-weight: 400;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1.5px;
+            background: var(--gold);
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--gold);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Mobile menu toggle */
+        .nav-mobile-menu {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .nav-mobile-menu span {
+            width: 24px;
+            height: 2px;
+            background: var(--gold);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        /* ===== Hero Section ===== */
+        .hero-section {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 120px 24px 60px;
+            overflow: hidden;
+        }
+
+        /* Background image layer */
+        .hero-bg-image {
+            position: absolute;
+            inset: -10% -5%;
+            background: url('start.png') center center / cover no-repeat;
+            transform: translateY(0);
+            transition: transform 0.05s linear;
+            z-index: 0;
+            will-change: transform;
+        }
+
+        /* Multi-layer overlay: bottom-heavy dark gradient + subtle vignette */
+        .hero-bg-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background:
+                linear-gradient(to bottom,
+                    rgba(4, 1, 1, 0.62) 0%,
+                    rgba(8, 2, 2, 0.38) 25%,
+                    rgba(6, 2, 2, 0.28) 50%,
+                    rgba(8, 2, 2, 0.55) 78%,
+                    rgba(4, 1, 1, 0.90) 100%),
+                radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.45) 100%);
+        }
+
+        .hero-glow {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(139, 0, 0, 0.18) 0%, rgba(139, 0, 0, 0.04) 50%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulseGlow 6s ease-in-out infinite;
+            z-index: 2;
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.15);
+                opacity: 0.7;
+            }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+        }
+
+        /* ===== Animated Banner ===== */
+        .banner-container {
+            margin-bottom: 48px;
+        }
+
+        .shimmer-text {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: clamp(2.2rem, 6vw, 4.2rem);
+            background: linear-gradient(90deg, #FFD700, #FFFACD, #FFD700, #DAA520, #FFD700, #FFFACD, #FFD700);
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 5s linear infinite;
+            line-height: 1.3;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 300% center;
+            }
+
+            100% {
+                background-position: -300% center;
+            }
+        }
+
+        .banner-sub {
+            font-family: var(--font-latin);
+            font-size: clamp(0.85rem, 2vw, 1.1rem);
+            color: var(--white-muted);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        /* ===== Next Nakath Label ===== */
+        .current-nakath-label {
+            display: inline-block;
+            margin-bottom: 24px;
+            padding: 8px 24px;
+            border: 1px solid var(--gold-dim);
+            border-radius: 100px;
+            background: rgba(255, 215, 0, 0.05);
+            font-size: 0.95rem;
+            color: var(--gold);
+        }
+
+        .current-nakath-label .label-prefix {
+            color: var(--white-muted);
+            font-size: 0.8rem;
+            margin-right: 6px;
+        }
+
+        /* ===== Countdown Frame ===== */
+        .countdown-frame {
+            position: relative;
+            padding: 36px 44px;
+            border: 1px solid rgba(255, 215, 0, 0.12);
+            display: inline-block;
+        }
+
+        .corner {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-color: var(--gold);
+            border-style: solid;
+        }
+
+        .corner.tl {
+            top: -1px;
+            left: -1px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .corner.tr {
+            top: -1px;
+            right: -1px;
+            border-width: 2px 2px 0 0;
+        }
+
+        .corner.bl {
+            bottom: -1px;
+            left: -1px;
+            border-width: 0 0 2px 2px;
+        }
+
+        .corner.br {
+            bottom: -1px;
+            right: -1px;
+            border-width: 0 2px 2px 0;
+        }
+
+        .countdown-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .countdown-block {
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .countdown-digit {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: clamp(2.8rem, 7vw, 4.5rem);
+            color: var(--white);
+            background: rgba(255, 215, 0, 0.06);
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            padding: 8px 14px;
+            min-width: 72px;
+            transition: transform 0.15s, opacity 0.15s;
+        }
+
+        .countdown-digit.flip {
+            animation: digitFlip 0.35s ease;
+        }
+
+        @keyframes digitFlip {
+            0% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+
+            45% {
+                transform: scaleY(0);
+                opacity: 0.4;
+            }
+
+            55% {
+                transform: scaleY(0);
+                opacity: 0.4;
+            }
+
+            100% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+        }
+
+        .countdown-label {
+            font-size: 0.78rem;
+            color: var(--white-muted);
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+        .countdown-separator {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            opacity: 0.6;
+            animation: blink 1s ease-in-out infinite;
+            margin-top: -20px;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 0.15;
+            }
+        }
+
+        .countdown-status {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: var(--white-muted);
+        }
+
+        .countdown-status.live {
+            color: #ff4444;
+            font-weight: 600;
+            animation: statusPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* ===== Ornamental Divider ===== */
+        .ornamental-divider {
+            display: flex;
+            justify-content: center;
+            padding: 40px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .ornamental-divider svg {
+            opacity: 0.4;
+        }
+
+        /* ===== Section Styles ===== */
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+        }
+
+        .section-subtitle {
+            font-family: var(--font-latin);
+            font-size: 0.9rem;
+            color: var(--white-muted);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+
+        /* ===== Nakath Section ===== */
+        .nakath-section {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        .nakath-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        /* ===== Nakath Card ===== */
+        .nakath-card {
+            position: relative;
+            overflow: hidden;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 28px 24px 24px;
+            transition: transform 0.3s, border-color 0.4s, box-shadow 0.4s;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .nakath-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.4s, box-shadow 0.4s;
+        }
+
+        .nakath-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .nakath-card.active {
+            border-color: var(--gold);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.2), 0 0 60px rgba(255, 215, 0, 0.08), inset 0 0 30px rgba(255, 215, 0, 0.03);
+            animation: glowPulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 25px rgba(255, 215, 0, 0.2), 0 0 60px rgba(255, 215, 0, 0.08), inset 0 0 30px rgba(255, 215, 0, 0.03);
+            }
+
+            50% {
+                box-shadow: 0 0 35px rgba(255, 215, 0, 0.3), 0 0 80px rgba(255, 215, 0, 0.12), inset 0 0 40px rgba(255, 215, 0, 0.05);
+            }
+        }
+
+        .nakath-card.passed {
+            opacity: 0.4;
+        }
+
+        .nakath-card.passed.visible {
+            opacity: 0.4;
+        }
+
+        /* Live Badge */
+        .live-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: linear-gradient(135deg, #ff2222, #cc0000);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 100px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            animation: badgePulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes badgePulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 0 18px rgba(255, 0, 0, 0.8);
+            }
+        }
+
+        .upcoming-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255, 215, 0, 0.15);
+            color: var(--gold);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 100px;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255, 215, 0, 0.25);
+        }
+
+        .passed-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--white-muted);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 100px;
+            letter-spacing: 1px;
+        }
+
+        .nakath-name {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--white);
+            margin-bottom: 4px;
+            padding-right: 80px;
+            line-height: 1.4;
+        }
+
+        .nakath-name-en {
+            font-family: var(--font-latin);
+            font-size: 0.75rem;
+            color: var(--white-muted);
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .nakath-divider {
+            height: 1px;
+            background: linear-gradient(90deg, var(--gold-dim), transparent);
+            margin-bottom: 16px;
+        }
+
+        .nakath-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .nakath-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.88rem;
+            color: var(--white-dim);
+        }
+
+        .nakath-meta-item i {
+            width: 20px;
+            text-align: center;
+            color: var(--gold);
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .nakath-meta-item .meta-label {
+            color: var(--white-muted);
+            min-width: 60px;
+        }
+
+        .nakath-instructions {
+            font-size: 0.82rem;
+            color: var(--white-muted);
+            line-height: 1.7;
+            padding: 12px 14px;
+            background: rgba(255, 215, 0, 0.03);
+            border-left: 2px solid rgba(255, 215, 0, 0.15);
+            border-radius: 0 6px 6px 0;
+        }
+
+        /* ===== Per-card mini countdown ===== */
+        .card-countdown {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            margin-top: 16px;
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 215, 0, 0.12);
+            border-radius: 10px;
+        }
+
+        .card-countdown.live-cd {
+            border-color: rgba(255, 60, 60, 0.4);
+            background: rgba(80, 0, 0, 0.4);
+        }
+
+        .card-countdown.passed-cd {
+            opacity: 0.4;
+        }
+
+        .cd-unit {
+            text-align: center;
+            min-width: 38px;
+        }
+
+        .cd-num {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--white);
+            line-height: 1;
+            background: rgba(255, 215, 0, 0.07);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            border-radius: 6px;
+            padding: 4px 6px;
+            display: block;
+            min-width: 34px;
+            text-align: center;
+        }
+
+        .card-countdown.live-cd .cd-num {
+            color: #ff8080;
+            border-color: rgba(255, 60, 60, 0.3);
+            background: rgba(255, 60, 60, 0.08);
+        }
+
+        .cd-lbl {
+            font-size: 0.58rem;
+            color: var(--white-muted);
+            letter-spacing: 0.5px;
+            margin-top: 3px;
+            display: block;
+        }
+
+        .cd-sep {
+            font-family: var(--font-display);
+            color: var(--gold);
+            font-size: 1rem;
+            opacity: 0.5;
+            padding-bottom: 12px;
+        }
+
+        .cd-status-label {
+            font-size: 0.7rem;
+            color: var(--white-muted);
+            text-align: center;
+            margin-top: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .cd-status-label.done {
+            color: #4ade80;
+        }
+
+        .cd-status-label.live-lbl {
+            color: #f87171;
+            animation: statusPulse 1.5s ease-in-out infinite;
+        }
+
+        /* ===== Awurudu Udawa hero countdown ===== */
+        .udawa-section {
+            margin-top: 36px;
+            text-align: center;
+        }
+
+        .udawa-label {
+            font-family: var(--font-display);
+            font-size: clamp(0.85rem, 2vw, 1.05rem);
+            color: var(--gold);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .udawa-cd-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .udawa-unit {
+            text-align: center;
+        }
+
+        .udawa-num {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: clamp(2rem, 5.5vw, 3.4rem);
+            color: #fff;
+            background: rgba(255, 215, 0, 0.07);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 10px;
+            padding: 8px 14px;
+            display: block;
+            min-width: clamp(56px, 10vw, 80px);
+            text-align: center;
+            box-shadow: 0 0 18px rgba(255, 215, 0, 0.08);
+            transition: transform 0.15s;
+        }
+
+        .udawa-lbl {
+            font-size: 0.7rem;
+            color: var(--white-muted);
+            letter-spacing: 1px;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .udawa-sep {
+            font-family: var(--font-display);
+            font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+            color: var(--gold);
+            opacity: 0.55;
+            margin-bottom: 18px;
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        .udawa-done {
+            font-family: var(--font-display);
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            color: #4ade80;
+            text-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+
+        /* ===== Games Section ===== */
+        .games-section {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 24px 100px;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .game-card {
+            position: relative;
+            overflow: hidden;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 36px 24px 28px;
+            text-align: center;
+            transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .game-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .game-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(255, 215, 0, 0.35);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 215, 0, 0.06);
+        }
+
+        .game-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.03));
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            border-radius: 16px;
+            font-size: 1.5rem;
+            color: var(--gold);
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .game-card:hover .game-icon {
+            transform: scale(1.1) rotate(-3deg);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.18), rgba(255, 215, 0, 0.06));
+        }
+
+        .game-name {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .game-name-en {
+            font-size: 0.75rem;
+            color: var(--white-muted);
+            margin-bottom: 18px;
+            letter-spacing: 0.5px;
+        }
+
+        .play-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border: 1px solid var(--gold-dim);
+            border-radius: 100px;
+            background: rgba(255, 215, 0, 0.08);
+            color: var(--gold);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 44px;
+            /* Minimum tap target */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .play-btn:hover {
+            background: rgba(255, 215, 0, 0.18);
+            border-color: var(--gold);
+            box-shadow: 0 0 16px rgba(255, 215, 0, 0.15);
+        }
+
+        .play-btn:focus-visible {
+            outline: 2px solid var(--gold);
+            outline-offset: 2px;
+        }
+
+        .play-btn i {
+            font-size: 0.75rem;
+        }
+
+        /* ===== Footer ===== */
+        footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 40px 24px;
+            border-top: 1px solid rgba(255, 215, 0, 0.08);
+            color: var(--white-muted);
+            font-size: 0.8rem;
+        }
+
+        footer .footer-brand {
+            font-family: var(--font-display);
+            font-weight: 700;
+            color: var(--gold);
+            font-size: 1rem;
+            margin-bottom: 6px;
+        }
+
+        /* ===== Toast ===== */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            background: linear-gradient(135deg, rgba(100, 0, 0, 0.95), rgba(60, 0, 0, 0.95));
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            color: var(--white);
+            padding: 16px 24px;
+            border-radius: 10px;
+            max-width: 360px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            animation: toastIn 0.4s ease-out;
+        }
+
+        .toast.removing {
+            animation: toastOut 0.3s ease-in forwards;
+        }
+
+        .toast-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            color: var(--gold);
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .toast-body {
+            font-size: 0.82rem;
+            color: var(--white-dim);
+            line-height: 1.5;
+        }
+
+        @keyframes toastIn {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+        }
+
+        /* ===== Notification Permission Banner ===== */
+        .notif-banner {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: linear-gradient(135deg, rgba(80, 0, 0, 0.96), rgba(40, 0, 0, 0.96));
+            border: 1px solid var(--gold-dim);
+            padding: 14px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            font-size: 0.85rem;
+            color: var(--white-dim);
+            animation: toastIn 0.4s ease-out;
+        }
+
+        .notif-banner button {
+            padding: 8px 20px;
+            border: 1px solid var(--gold-dim);
+            border-radius: 100px;
+            background: rgba(255, 215, 0, 0.1);
+            color: var(--gold);
+            font-family: var(--font-body);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .notif-banner button:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: var(--gold);
+        }
+
+        .notif-banner .dismiss-btn {
+            background: none;
+            border: none;
+            color: var(--white-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            nav {
+                padding: 12px 20px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .nav-mobile-menu {
+                display: flex;
+            }
+
+            .countdown-frame {
+                padding: 24px 20px;
+            }
+
+            .countdown-block {
+                min-width: 60px;
+            }
+
+            .countdown-digit {
+                min-width: 56px;
+                padding: 6px 8px;
+                font-size: clamp(2rem, 8vw, 3rem);
+            }
+
+            .countdown-separator {
+                font-size: 1.8rem;
+                margin-top: -16px;
+            }
+
+            .nakath-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .games-grid {
+                grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+                gap: 14px;
+            }
+
+            .game-card {
+                padding: 22px 14px 18px;
+            }
+
+            .game-icon {
+                width: 52px;
+                height: 52px;
+                font-size: 1.3rem;
+            }
+
+            .game-name {
+                font-size: 0.95rem;
+            }
+
+            .notif-banner {
+                flex-direction: column;
+                text-align: center;
+                max-width: 90vw;
+            }
+        }
+
+        @media (max-width: 480px) {
+            nav {
+                padding: 10px 16px;
+            }
+
+            .countdown-container {
+                gap: 6px;
+            }
+
+            .countdown-block {
+                min-width: 50px;
+            }
+
+            .countdown-digit {
+                min-width: 48px;
+                padding: 4px 6px;
+            }
+
+            .corner {
+                width: 16px;
+                height: 16px;
+            }
+
+            .games-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .game-card {
+                padding: 18px 10px 14px;
+            }
+
+            .banner-container {
+                margin-bottom: 28px;
+            }
+
+            .hero-section {
+                padding: 80px 16px 40px;
+            }
+
+            .games-section {
+                padding: 28px 14px 80px;
+            }
+        }
+
+        /* ===== Reduced Motion ===== */
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .particle {
+                display: none;
+            }
+        }
+
+        /* ===== Scrollbar ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 215, 0, 0.35);
+        }
+
+        /* ===== Awurudu Popup ===== */
+        .awurudu-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .awurudu-popup.show {
+            opacity: 1;
+        }
+
+        .awurudu-popup-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(255, 215, 0, 0.4);
+            transform: scale(0.9);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .awurudu-popup.show .awurudu-popup-content {
+            transform: scale(1);
+        }
+
+        .awurudu-popup-img {
+            display: block;
+            max-width: 100%;
+            max-height: 85vh;
+            object-fit: contain;
+        }
+
+        .awurudu-popup-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 2;
+        }
+
+        .awurudu-popup-close:hover {
+            background: #ff4757;
+            border-color: #ff4757;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background layers -->
+    <div class="bg-texture"></div>
+    <div class="bg-noise"></div>
+    <div id="particles" aria-hidden="true"></div>
+
+    <!-- Awurudu Popup Overlay -->
+    <div id="awurudu-popup-overlay" class="awurudu-popup" style="display:none;" aria-hidden="true">
+        <div class="awurudu-popup-content">
+            <button class="awurudu-popup-close" onclick="closeAwuruduPopup()" aria-label="Close message">
+                <i class="fas fa-times"></i>
+            </button>
+            <img src="awurudu pra.jpg" alt="Subha Aluth Awuruddak Wewa" class="awurudu-popup-img" />
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="navbar" role="navigation" aria-label="Main navigation">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <i class="fas fa-sun" aria-hidden="true"></i>
+                <span>Digital Awurudu 2026</span>
+            </div>
+            <div class="nav-links">
+                <a href="#countdown">නැකත්</a>
+                <a href="nakath.pdf" target="_blank">සීට්ටුව</a>
+                <a href="#games">ක්‍රීඩා</a>
+            </div>
+            <div class="nav-mobile-menu" onclick="toggleMobileMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <!-- Mobile dropdown -->
+        <div id="mobile-nav"
+            style="display:none; position:absolute; top:100%; left:0; right:0; background:rgba(13,3,3,0.97); backdrop-filter:blur(16px); border-bottom:1px solid rgba(255,215,0,0.15); padding:16px 20px; z-index:999;">
+            <a href="#countdown" onclick="toggleMobileMenu()"
+                style="display:block; color:#ccc; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); font-size:1rem;">නැකත්</a>
+            <a href="nakath.pdf" target="_blank" onclick="toggleMobileMenu()"
+                style="display:block; color:#ccc; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); font-size:1rem;">සීට්ටුව</a>
+            <a href="#games" onclick="toggleMobileMenu()"
+                style="display:block; color:#FFD700; padding:12px 0; font-size:1rem; font-weight:700;">ක්‍රීඩා</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="countdown" class="hero-section">
+        <!-- Background image with parallax -->
+        <div class="hero-bg-image" id="hero-bg" aria-hidden="true"></div>
+        <!-- Dark overlay -->
+        <div class="hero-bg-overlay" aria-hidden="true"></div>
+
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-content">
+            <div class="banner-container">
+                <h1 class="shimmer-text">සුභ අලුත් අවුරුද්දක් වේවා</h1>
+                <p class="banner-sub">Subha Aluth Awuruddak Wewa</p>
+            </div>
+
+
+            <!-- Aluth Awurudu Udawa Countdown -->
+            <div class="udawa-section">
+                <div class="udawa-label">🎊 අලුත් අවුරුදු උදාවට 🎊</div>
+
+                <div class="text-lg bg-black/30 py-2 px-4 rounded-full inline-block mb-6 shadow-md"
+                    style="font-size: 0.9rem; color: #facc15; border: 1px solid rgba(255,215,0,0.2); backdrop-filter: blur(4px);">
+                    නැකත: 2026 අප්‍රේල් 14 - 09:32 AM
+                </div>
+
+                <div id="udawa-done" class="udawa-done" style="display:none">✨ සුභ අලුත් අවුරුද්දක් වේවා! ✨</div>
+                <div class="udawa-cd-row" id="udawa-row">
+                    <div class="udawa-unit">
+                        <span class="udawa-num" id="ud-days">--</span>
+                        <span class="udawa-lbl">දින</span>
+                    </div>
+                    <div class="udawa-sep">:</div>
+                    <div class="udawa-unit">
+                        <span class="udawa-num" id="ud-hours">--</span>
+                        <span class="udawa-lbl">පැය</span>
+                    </div>
+                    <div class="udawa-sep">:</div>
+                    <div class="udawa-unit">
+                        <span class="udawa-num" id="ud-mins">--</span>
+                        <span class="udawa-lbl">මිනිත්තු</span>
+                    </div>
+                    <div class="udawa-sep">:</div>
+                    <div class="udawa-unit">
+                        <span class="udawa-num" id="ud-secs">--</span>
+                        <span class="udawa-lbl">තත්පර</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ornamental Divider -->
+    <div class="ornamental-divider" aria-hidden="true">
+        <svg width="360" height="36" viewBox="0 0 360 36" fill="none">
+            <line x1="0" y1="18" x2="140" y2="18" stroke="#FFD700" stroke-width="0.6" opacity="0.4" />
+            <line x1="220" y1="18" x2="360" y2="18" stroke="#FFD700" stroke-width="0.6" opacity="0.4" />
+            <path d="M155 18 Q180 4 205 18" stroke="#FFD700" stroke-width="0.7" fill="none" opacity="0.5" />
+            <path d="M155 18 Q180 32 205 18" stroke="#FFD700" stroke-width="0.7" fill="none" opacity="0.5" />
+            <circle cx="180" cy="18" r="3" fill="none" stroke="#FFD700" stroke-width="0.6" opacity="0.4" />
+            <circle cx="180" cy="18" r="1" fill="#FFD700" opacity="0.5" />
+            <circle cx="155" cy="18" r="1.2" fill="#FFD700" opacity="0.3" />
+            <circle cx="205" cy="18" r="1.2" fill="#FFD700" opacity="0.3" />
+            <circle cx="140" cy="18" r="0.8" fill="#FFD700" opacity="0.2" />
+            <circle cx="220" cy="18" r="0.8" fill="#FFD700" opacity="0.2" />
+        </svg>
+    </div>
+
+    <!-- Nakath Sittuwa Section -->
+    <section id="nakath" class="nakath-section">
+        <div class="section-header">
+            <h2 class="section-title shimmer-text">නැකත් සීට්ටුව</h2>
+            <p class="section-subtitle">Nakath Sittuwa 2026</p>
+        </div>
+        <div id="nakath-grid" class="nakath-grid" role="list">
+            <!-- Generated by JS -->
+        </div>
+    </section>
+
+    <!-- Ornamental Divider -->
+    <div class="ornamental-divider" aria-hidden="true">
+        <svg width="360" height="36" viewBox="0 0 360 36" fill="none">
+            <line x1="0" y1="18" x2="140" y2="18" stroke="#FFD700" stroke-width="0.6" opacity="0.4" />
+            <line x1="220" y1="18" x2="360" y2="18" stroke="#FFD700" stroke-width="0.6" opacity="0.4" />
+            <path d="M160 10 Q180 6 200 10" stroke="#FFD700" stroke-width="0.5" fill="none" opacity="0.3" />
+            <path d="M155 14 Q180 8 205 14" stroke="#FFD700" stroke-width="0.5" fill="none" opacity="0.35" />
+            <path d="M150 18 Q180 0 210 18" stroke="#FFD700" stroke-width="0.7" fill="none" opacity="0.5" />
+            <path d="M155 22 Q180 28 205 22" stroke="#FFD700" stroke-width="0.5" fill="none" opacity="0.35" />
+            <path d="M160 26 Q180 30 200 26" stroke="#FFD700" stroke-width="0.5" fill="none" opacity="0.3" />
+            <circle cx="180" cy="18" r="2" fill="#FFD700" opacity="0.4" />
+        </svg>
+    </div>
+
+    <!-- Games Gallery Section -->
+    <section id="games" class="games-section">
+        <div class="section-header">
+            <h2 class="section-title shimmer-text">අවුරුදු ක්‍රීඩා</h2>
+            <p class="section-subtitle">Awurudu Kreeda</p>
+        </div>
+        <div class="games-grid" role="list">
+            <!-- OUR ACTUAL GAMES -->
+            <div class="game-card" role="listitem">
+                <div class="game-icon"><i class="fas fa-jar"></i></div>
+                <div class="game-name">කණා මුට්ටි බිඳීම</div>
+                <div class="game-name-en">Kana Mutti Bidima</div>
+                <button class="play-btn" onclick="window.location.href='kanamutti'"><i class="fas fa-play"></i>
+                    Play</button>
+            </div>
+
+            <div class="game-card" role="listitem">
+                <div class="game-icon"><i class="fas fa-search-location"></i></div>
+                <div class="game-name">සැඟවුණු අමුත්තා</div>
+                <div class="game-name-en">Treasure Hunt</div>
+                <button class="play-btn" onclick="window.location.href='treasure-hunt'"><i class="fas fa-play"></i>
+                    Play</button>
+            </div>
+
+            <!-- PLACEHOLDERS -->
+            <div class="game-card" role="listitem">
+                <div class="game-icon"><i class="fas fa-bicycle"></i></div>
+                <div class="game-name">රේස්</div>
+                <div class="game-name-en">Typing Race</div>
+                <button class="play-btn" onclick="window.location.href='typing-race'"><i class="fas fa-play"></i>
+                    Play</button>
+            </div>
+            <div class="game-card" role="listitem">
+                <div class="game-icon">🐘</div>
+                <div class="game-name">අලියාට ඇහැ තැබීම</div>
+                <div class="game-name-en">Pin the Eye</div>
+                <button class="play-btn" onclick="window.location.href='aliyata-aha-thabiima'"><i
+                        class="fas fa-play"></i> Play</button>
+            </div>
+            <div class="game-card" role="listitem">
+                <div class="game-icon"><i class="fas fa-hand-fist"></i></div>
+                <div class="game-name">කොට්ට පොර</div>
+                <div class="game-name-en">Kotta Pora</div>
+                <button class="play-btn" onclick="window.location.href='kotta-pora'"><i class="fas fa-play"></i>
+                    Play</button>
+            </div>
+            <div class="game-card" role="listitem">
+                <div class="game-icon"><i class="fas fa-chess-board"></i></div>
+                <div class="game-name">ඕලිඳ කෙළිය</div>
+                <div class="game-name-en">Olinda Keliya</div>
+                <button class="play-btn" onclick="window.location.href='olinda-keliya'"><i class="fas fa-play"></i>
+                    Play</button>
+            </div>
+            <div class="game-card" role="listitem">
+                <div class="game-icon"><i class="fas fa-tree"></i></div>
+                <div class="game-name">ලිස්සන ගහ නැගීම</div>
+                <div class="game-name-en">Lissana Gaha</div>
+                <button class="play-btn" onclick="window.location.href='lissana-gaha'"><i class="fas fa-play"></i>
+                    Play</button>
+            </div>
+            <div class="game-card" role="listitem">
+                <div class="game-icon"><i class="fas fa-people-pulling"></i></div>
+                <div class="game-name">කඹ ඇදීම</div>
+                <div class="game-name-en">Kaba Adima</div>
+                <button class="play-btn" onclick="window.location.href='kaba-adima'"><i class="fas fa-play"></i>
+                    Play</button>
+            </div>
+            <div class="game-card" role="listitem">
+                <div class="game-icon"><i class="fas fa-cookie"></i></div>
+                <div class="game-name">කොකිස් රේස්</div>
+                <div class="game-name-en">Kokis Race</div>
+                <button class="play-btn" onclick="window.location.href='kokis-race'"><i class="fas fa-play"></i>
+                    Play</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer
+        style="text-align: center; padding: 60px 20px; color: white; background: rgba(0,0,0,0.8); border-top: 1px solid rgba(255,215,0,0.2); font-family: 'Noto Sans Sinhala', sans-serif;">
+        <div class="footer-brand"
+            style="font-size: 1.8rem; font-weight: 900; color: #FFD700; margin-bottom: 15px; text-shadow: 0 0 15px rgba(255,215,0,0.3);">
+            Digital Awurudu 2026</div>
+        <p style="max-width: 700px; margin: 0 auto 30px; opacity: 0.7; line-height: 1.8; font-size: 0.95rem;">සියළු
+            නැකත් කාල සඳහන් අගයන් අනුමානගත ඒවා වේ. නිවැරදි කාල සඳහා විධිමත් ප්‍රකාශයක් සමඟ සංසන්දනය කරන්න.</p>
+        <div
+            style="font-size: 1rem; letter-spacing: 0.5px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; display: inline-block;">
+            Developed by <a href="https://janiruhansaga.com/" target="_blank"
+                style="color: #FFD700; text-decoration: none; font-weight: 900; transition: all 0.3s; border-bottom: 1px dashed #FFD700;"
+                onmouseover="this.style.color='#fff';this.style.borderBottomStyle='solid'"
+                onmouseout="this.style.color='#FFD700';this.style.borderBottomStyle='dashed'">JAniruhansaga</a>
+        </div>
+    </footer>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <script>
+        // ===== Nakath Data Array =====
+        const nakathData = [
+            {
+                name: "Punya Kalaya (පුණ්‍ය කාලය)",
+                time: "2026-04-14T03:08:00+05:30",
+                color: "White (සුදු පැහැති)",
+                direction: "N/A (අදාළ නොවේ)",
+                instructions: "මෙදින අලුයම 3.08 සිට පස්වරු 3.56 දක්වා පුණ්‍ය කාලය වන බැවින් අලුයම 3.08 ට ප්‍රථම ආහාර පාන ගෙන සියලු වැඩ අත්හැර ආගමික වතාවත්වල යෙදීම මැනවි."
+            },
+            {
+                name: "Ahara Piseema (ආහාර පිසීම)",
+                time: "2026-04-14T10:51:00+05:30",
+                color: "Red (රතු පැහැති)",
+                direction: "East (නැගෙනහිර)",
+                instructions: "රතු පැහැති වස්ත්‍රාභරණයෙන් සැරසී නැගෙනහිර දිශාව බලා ළිප ගිනි මොළවා කිරිබතක් පිළියෙල කිරීම මැනවි."
+            },
+            {
+                name: "Wada Allima, Ganu Denu Ha Ahara Anubhavaya (වැඩ ඇල්ලීම, ගනුදෙනු කිරීම හා ආහාර අනුභවය)",
+                time: "2026-04-14T12:06:00+05:30",
+                color: "Red (රතු වර්ණ)",
+                direction: "East (නැගෙනහිර)",
+                instructions: "රතු වර්ණ වස්ත්‍රාභරණයෙන් සැරසී නැගෙනහිර දිශාව බලා සියලු වැඩ අල්ලා, ගනුදෙනු කොට ආහාර අනුභවය මැනවි."
+            },
+            {
+                name: "Hisa Thel Gama (හිසතෙල් ගෑම)",
+                time: "2026-04-15T06:55:00+05:30",
+                color: "Green (කොළ පැහැති)",
+                direction: "East (නැගෙනහිර)",
+                instructions: "කොහොඹ පත් හිසටත්, කොලොන් පත් පයටත් තබා කොහොඹ පත් යුෂ මිශ්ර නානු හා තෙල් ගා ස්නානය මැනවි."
+            },
+            {
+                name: "Hadisi Rajakari Sandaha Pitathwa Yama (හදිසි රාජකාරි සඳහා පිටත්ව යාම)",
+                time: "2026-04-17T05:38:00+05:30",
+                color: "Golden (රන්වන් පාට)",
+                direction: "North (උතුර)",
+                instructions: "දීකිරි මිශ්ර කිරිබතක් හා හෙළ මෝරු ද උඳු මිශ්ර කැවිලි වර්ගයක් අනුභව කර පිටත්ව යාම."
+            },
+            {
+                name: "Rakiraksha Sandaha Pitathwa Yama (රැකීරක්ෂා සඳහා පිටත්ව යාම)",
+                time: "2026-04-20T06:27:00+05:30",
+                color: "White (ශ්වේත වර්ණ)",
+                direction: "South (දකුණු)",
+                instructions: "කිරිබත් ද එලකිරි මිශ්ර කැවිලි වර්ගයක් අනුභව කර පිටත්ව යාම මැනවි."
+            },
+            {
+                name: "Pela Situweema (පැළ සිටුවීම)",
+                time: "2026-04-23T09:01:00+05:30",
+                color: "Golden (රන්වන් පැහැති)",
+                direction: "North (උතුර)",
+                instructions: "පැළ සිටුවීම මැනවි."
+            }
+        ];
+
+        // ===== Utility: Format date/time in Sinhala locale style =====
+        function formatDateTime(isoString) {
+            const d = new Date(isoString);
+            const year = d.getFullYear();
+            const month = d.toLocaleString('en-US', { month: 'long' });
+            const day = d.getDate();
+            let hours = d.getHours();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            const mins = String(d.getMinutes()).padStart(2, '0');
+            return `${month} ${day}, ${year} — ${hours}:${mins} ${ampm}`;
+        }
+
+        // ===== Status determination =====
+        // LIVE window: 30 minutes after nakath time
+        const LIVE_WINDOW_MS = 30 * 60 * 1000;
+
+        function getNakathStatus(nakath) {
+            const now = Date.now();
+            const t = new Date(nakath.time).getTime();
+            const diff = now - t;
+            if (diff < 0) return 'upcoming';
+            if (diff <= LIVE_WINDOW_MS) return 'live';
+            return 'passed';
+        }
+
+        // ===== Find the current countdown target =====
+        // Priority: live nakath > next upcoming nakath > all passed
+        let currentTargetIndex = -1;
+        let lastNotifiedIndex = -1;
+
+        function findCountdownTarget() {
+            const now = Date.now();
+            let liveIdx = -1;
+            let nextIdx = -1;
+
+            for (let i = 0; i < nakathData.length; i++) {
+                const status = getNakathStatus(nakathData[i]);
+                if (status === 'live' && liveIdx === -1) liveIdx = i;
+                if (status === 'upcoming' && nextIdx === -1) nextIdx = i;
+            }
+
+            // If there's a live one, show it (countdown to end of live window)
+            if (liveIdx !== -1) return { index: liveIdx, type: 'live' };
+            // Otherwise count down to next upcoming
+            if (nextIdx !== -1) return { index: nextIdx, type: 'upcoming' };
+            // All passed
+            return { index: -1, type: 'all_passed' };
+        }
+
+        // ===== Global countdown update =====
+        function updateCountdown() {
+            const target = findCountdownTarget();
+            const prevTarget = currentTargetIndex;
+            currentTargetIndex = target.index;
+
+            // Detect nakath transition → notification
+            if (prevTarget !== -1 && currentTargetIndex !== prevTarget && currentTargetIndex !== -1) {
+                triggerNakathNotification(currentTargetIndex);
+            }
+
+            renderNakathCards();
+        }
+
+        // ===== Render Nakath Cards =====
+        const nakathGrid = document.getElementById('nakath-grid');
+
+        function renderNakathCards() {
+            const target = findCountdownTarget();
+            // Only rebuild if structure changed (check data attribute)
+            const currentActiveId = nakathGrid.dataset.active;
+            const newActiveId = target.index !== -1 ? String(target.index) : 'none';
+
+            if (currentActiveId === newActiveId && nakathGrid.children.length > 0) {
+                // Just update existing card states
+                updateCardStates(target);
+                return;
+            }
+
+            nakathGrid.innerHTML = '';
+            nakathGrid.dataset.active = newActiveId;
+
+            nakathData.forEach((nakath, i) => {
+                const status = getNakathStatus(nakath);
+                const card = document.createElement('div');
+                card.className = 'nakath-card' + (status === 'live' ? ' active' : status === 'passed' ? ' passed' : '');
+                card.setAttribute('role', 'listitem');
+                card.style.transitionDelay = (i * 0.08) + 's';
+
+                // Badge
+                let badgeHTML = '';
+                if (status === 'live') badgeHTML = '<span class="live-badge">LIVE NOW</span>';
+                else if (status === 'upcoming') badgeHTML = '<span class="upcoming-badge">UPCOMING</span>';
+                else badgeHTML = '<span class="passed-badge">PASSED</span>';
+
+                // Extract Sinhala name (inside parentheses if present, or full name)
+                const sinhalaMatch = nakath.name.match(/\(([^)]+)\)/);
+                const sinhalaName = sinhalaMatch ? sinhalaMatch[1] : nakath.name;
+                const englishName = nakath.name.replace(/\([^)]+\)/, '').trim();
+
+                // Build mini countdown HTML
+                let cdClass = 'card-countdown';
+                let cdStatusClass = 'cd-status-label';
+                let cdStatusText = 'ඉතිරි කාලය';
+                if (status === 'live') { cdClass += ' live-cd'; cdStatusClass += ' live-lbl'; cdStatusText = 'LIVE — ක්‍රියාකාරී'; }
+                if (status === 'passed') { cdClass += ' passed-cd'; cdStatusClass += ' done'; cdStatusText = 'සම්පූර්ණ ✓'; }
+
+                card.innerHTML = `
+                    ${badgeHTML}
+                    <div class="nakath-name">${sinhalaName}</div>
+                    <div class="nakath-name-en">${englishName}</div>
+                    <div class="nakath-divider"></div>
+                    <div class="nakath-meta">
+                        <div class="nakath-meta-item">
+                            <i class="far fa-calendar" aria-hidden="true"></i>
+                            <span class="meta-label">කාලය:</span>
+                            <span>${formatDateTime(nakath.time)}</span>
+                        </div>
+                        <div class="nakath-meta-item">
+                            <i class="fas fa-tshirt" aria-hidden="true"></i>
+                            <span class="meta-label">වර්ණය:</span>
+                            <span>${nakath.color}</span>
+                        </div>
+                        <div class="nakath-meta-item">
+                            <i class="fas fa-compass" aria-hidden="true"></i>
+                            <span class="meta-label">දිශාව:</span>
+                            <span>${nakath.direction}</span>
+                        </div>
+                    </div>
+                    <div class="nakath-instructions">${nakath.instructions}</div>
+                    <div class="${cdClass}" data-nakath-time="${nakath.time}" data-status="${status}">
+                        <div class="cd-unit"><span class="cd-num" data-cd-part="d">--</span><span class="cd-lbl">දින</span></div>
+                        <div class="cd-sep">:</div>
+                        <div class="cd-unit"><span class="cd-num" data-cd-part="h">--</span><span class="cd-lbl">පැය</span></div>
+                        <div class="cd-sep">:</div>
+                        <div class="cd-unit"><span class="cd-num" data-cd-part="m">--</span><span class="cd-lbl">මිනිත්</span></div>
+                        <div class="cd-sep">:</div>
+                        <div class="cd-unit"><span class="cd-num" data-cd-part="s">--</span><span class="cd-lbl">තත්පර</span></div>
+                    </div>
+                    <div class="${cdStatusClass}">${cdStatusText}</div>
+                `;
+
+                nakathGrid.appendChild(card);
+            });
+
+            // Trigger visibility animation
+            requestAnimationFrame(() => {
+                document.querySelectorAll('.nakath-card').forEach(c => c.classList.add('visible'));
+            });
+        }
+
+        function updateCardStates(target) {
+            const cards = nakathGrid.querySelectorAll('.nakath-card');
+            cards.forEach((card, i) => {
+                const status = getNakathStatus(nakathData[i]);
+                card.classList.toggle('active', status === 'live');
+                card.classList.toggle('passed', status === 'passed');
+
+                // Update badge
+                const existingBadge = card.querySelector('.live-badge, .upcoming-badge, .passed-badge');
+                if (existingBadge) existingBadge.remove();
+
+                let badgeHTML = '';
+                if (status === 'live') badgeHTML = '<span class="live-badge">LIVE NOW</span>';
+                else if (status === 'upcoming') badgeHTML = '<span class="upcoming-badge">UPCOMING</span>';
+                else badgeHTML = '<span class="passed-badge">PASSED</span>';
+                card.insertAdjacentHTML('afterbegin', badgeHTML);
+            });
+        }
+
+        // ===== Per-card mini countdown tick =====
+        function tickCardCountdowns() {
+            const now = Date.now();
+            document.querySelectorAll('.card-countdown').forEach(cdEl => {
+                const status = cdEl.dataset.status;
+                const nakathTime = new Date(cdEl.dataset.nakathTime).getTime();
+                let diff;
+
+                if (status === 'passed') {
+                    // Show zeros
+                    cdEl.querySelectorAll('[data-cd-part]').forEach(el => el.textContent = '00');
+                    return;
+                } else if (status === 'live') {
+                    // Count down to end of live window (30 min after nakath time)
+                    diff = Math.max(0, nakathTime + LIVE_WINDOW_MS - now);
+                } else {
+                    // Count down to nakath time
+                    diff = Math.max(0, nakathTime - now);
+                }
+
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+                const pad = n => String(n).padStart(2, '0');
+                const dEl = cdEl.querySelector('[data-cd-part="d"]');
+                const hEl = cdEl.querySelector('[data-cd-part="h"]');
+                const mEl = cdEl.querySelector('[data-cd-part="m"]');
+                const sEl = cdEl.querySelector('[data-cd-part="s"]');
+                if (dEl) dEl.textContent = pad(d);
+                if (hEl) hEl.textContent = pad(h);
+                if (mEl) mEl.textContent = pad(m);
+                if (sEl) sEl.textContent = pad(s);
+            });
+        }
+
+        // ===== Aluth Awurudu Udawa Countdown =====
+        // April 14, 2026 09:12:00 Sri Lanka Time (+05:30) (Matched directly from Nakath Sittuwa)
+        const AWURUDU_TIME = new Date('2026-04-14T09:12:00+05:30').getTime();
+
+        window.awuruduPopupShown = false;
+        function closeAwuruduPopup() {
+            const popup = document.getElementById('awurudu-popup-overlay');
+            if (popup) {
+                popup.classList.remove('show');
+                setTimeout(() => { popup.style.display = 'none'; }, 400);
+            }
+            sessionStorage.setItem('awuruduPopupClosed', 'true');
+        }
+
+        function updateUdawaCountdown() {
+            const doneEl = document.getElementById('udawa-done');
+            const rowEl = document.getElementById('udawa-row');
+            if (!doneEl || !rowEl) return;
+
+            const diff = AWURUDU_TIME - Date.now();
+            if (diff <= 0) {
+                // Awurudu has arrived!
+                doneEl.style.display = 'block';
+                rowEl.style.display = 'none';
+
+                // Show popup if not already shown this session
+                if (!window.awuruduPopupShown && !sessionStorage.getItem('awuruduPopupClosed')) {
+                    const popup = document.getElementById('awurudu-popup-overlay');
+                    if (popup) {
+                        popup.style.display = 'flex';
+                        setTimeout(() => popup.classList.add('show'), 10);
+                        window.awuruduPopupShown = true;
+                    }
+                }
+                return;
+            }
+            doneEl.style.display = 'none';
+            rowEl.style.display = 'flex';
+
+            const pad = n => String(n).padStart(2, '0');
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+            const udDays = document.getElementById('ud-days');
+            const udHours = document.getElementById('ud-hours');
+            const udMins = document.getElementById('ud-mins');
+            const udSecs = document.getElementById('ud-secs');
+
+            if (udDays) { const v = pad(d); if (udDays.textContent !== v) { udDays.style.transform = 'scale(1.15)'; setTimeout(() => udDays.style.transform = '', 150); udDays.textContent = v; } }
+            if (udHours) { const v = pad(h); if (udHours.textContent !== v) { udHours.style.transform = 'scale(1.15)'; setTimeout(() => udHours.style.transform = '', 150); udHours.textContent = v; } }
+            if (udMins) { const v = pad(m); if (udMins.textContent !== v) { udMins.style.transform = 'scale(1.15)'; setTimeout(() => udMins.style.transform = '', 150); udMins.textContent = v; } }
+            if (udSecs) { const v = pad(s); if (udSecs.textContent !== v) { udSecs.style.transform = 'scale(1.15)'; setTimeout(() => udSecs.style.transform = '', 150); udSecs.textContent = v; } }
+        }
+
+        // ===== Notification: Sound + Browser Notification + Toast =====
+        let audioCtx = null;
+
+        function playBellSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                // Create a pleasant bell tone
+                const frequencies = [880, 1108.73, 1318.51]; // A5, C#6, E6 (A major chord)
+                frequencies.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    const startTime = audioCtx.currentTime + idx * 0.12;
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.linearRampToValueAtTime(0.15, startTime + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 1.8);
+                    osc.start(startTime);
+                    osc.stop(startTime + 2);
+                });
+            } catch (e) {
+                // Audio not supported
+            }
+        }
+
+        function triggerNakathNotification(index) {
+            if (index === lastNotifiedIndex) return;
+            lastNotifiedIndex = index;
+            const nakath = nakathData[index];
+
+            // Play bell sound
+            playBellSound();
+
+            // Show toast
+            const sinhalaMatch = nakath.name.match(/\(([^)]+)\)/);
+            const sinhalaName = sinhalaMatch ? sinhalaMatch[1] : nakath.name;
+            showToast('නැකැත් ක්‍රියාකාරී වේ!', `${sinhalaName} — දැන් නැකැත් වේලාව පටන් ගෙන ඇත.`);
+
+            // Browser notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification('Digital Awurudu 2026', {
+                        body: `${sinhalaName} — දැන් නැකැත් වේලාවයි!`,
+                        icon: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%23FFD700"/><text x="50" y="60" text-anchor="middle" font-size="40" fill="%238B0000">සු</text></svg>'),
+                        tag: 'awurudu-nakath-' + index
+                    });
+                } catch (e) { /* Notification failed */ }
+            }
+        }
+
+        // ===== Toast System =====
+        const toastContainer = document.getElementById('toast-container');
+
+        function showToast(title, body) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // ===== Mobile Nav Toggle =====
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-nav');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // ===== Nav Scroll Behaviour =====
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 40) nav.classList.add('scrolled');
+            else nav.classList.remove('scrolled');
+
+            // Parallax: move background at 40% scroll speed
+            const heroBg = document.getElementById('hero-bg');
+            if (heroBg) {
+                heroBg.style.transform = `translateY(${window.scrollY * 0.38}px)`;
+            }
+        }, { passive: true });
+
+        // ===== Notification Permission Banner =====
+        function showNotifBanner() {
+            if (!('Notification' in window) || Notification.permission !== 'default') return;
+            if (localStorage.getItem('notifBannerDismissed') === 'true') return;
+
+            const banner = document.createElement('div');
+            banner.className = 'notif-banner';
+            banner.innerHTML = `
+                <i class="fas fa-bell" style="color: var(--gold); font-size: 1.1rem;"></i>
+                <span>නැකැත් වේලාවන් පිළිබඳ දැනුම්දීම් ලබා ගන්නේද?</span>
+                <button onclick="requestNotifPermission(this)">Allow</button>
+                <button class="dismiss-btn" onclick="dismissNotifBanner(this)" aria-label="Dismiss">&times;</button>
+            `;
+            document.body.appendChild(banner);
+
+            // Auto-dismiss after 15 seconds without saving to localStorage (so they can see it later if they just ignored it)
+            setTimeout(() => {
+                if (banner.parentNode) banner.remove();
+            }, 15000);
+        }
+
+        function dismissNotifBanner(btn) {
+            btn.closest('.notif-banner').remove();
+            localStorage.setItem('notifBannerDismissed', 'true');
+        }
+
+        function requestNotifPermission(btn) {
+            Notification.requestPermission().then(perm => {
+                const banner = btn.closest('.notif-banner');
+                if (perm === 'granted') {
+                    banner.querySelector('span').textContent = 'දැනුම්දීම් සක්‍රීයයි!';
+                    setTimeout(() => banner.remove(), 2000);
+                } else {
+                    banner.remove();
+                }
+                localStorage.setItem('notifBannerDismissed', 'true');
+            });
+        }
+
+        // ===== Floating Particles =====
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const count = window.innerWidth < 768 ? 15 : 30;
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.top = Math.random() * 100 + '%';
+                p.style.setProperty('--dur', (5 + Math.random() * 8) + 's');
+                p.style.setProperty('--del', (Math.random() * 6) + 's');
+                p.style.setProperty('--tx', (Math.random() * 120 - 60) + 'px');
+                p.style.setProperty('--ty', (Math.random() * 120 - 60) + 'px');
+                p.style.width = (2 + Math.random() * 4) + 'px';
+                p.style.height = p.style.width;
+                container.appendChild(p);
+            }
+        }
+
+        // ===== Scroll: Nav background =====
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 60);
+        }, { passive: true });
+
+        // ===== Scroll: Reveal game cards =====
+        function setupScrollReveal() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+            document.querySelectorAll('.game-card').forEach((card, i) => {
+                card.style.transitionDelay = (i * 0.08) + 's';
+                observer.observe(card);
+            });
+        }
+
+        // ===== Initialization =====
+        function init() {
+            createParticles();
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+            setInterval(tickCardCountdowns, 1000);
+            setInterval(updateUdawaCountdown, 1000);
+            updateUdawaCountdown();
+            setupScrollReveal();
+            // Show notification banner after a short delay
+            setTimeout(showNotifBanner, 2500);
+        }
+
+        // Start when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+
+</html>

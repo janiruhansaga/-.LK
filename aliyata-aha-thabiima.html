@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="kn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hatticha Dola Theva - Avurudu Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Sinhala', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            touch-action: none;
+            cursor: crosshair;
+            background: linear-gradient(135deg, #78350f 0%, #b45309 25%, #d97706 50%, #fbbf24 75%, #fde68a 100%);
+        }
+        
+        .game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            background: transparent;
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            transition: background-color 1s ease;
+        }
+
+        /* body eke background fix */
+        body, html { height: 100%; }
+
+        /* Pardo sampurna kaalo (black) karva mate / Seta seširo se seso */
+        .blindfolded canvas {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 100 100'%3E%3Cpath d='M50 80C75 80 95 50 95 50C95 50 75 20 50 20C25 20 5 50 5 50C5 50 25 80 50 80Z' fill='white' stroke='%231e293b' stroke-width='5'/%3E%3Ccircle cx='50' cy='50' r='20' fill='%238b4513'/%3E%3Ccircle cx='50' cy='50' r='10' fill='black'/%3E%3Ccircle cx='45' cy='45' r='4' fill='white'/%3E%3C/svg%3E") 16 16, crosshair !important;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes pulse-glow {
+            0% { text-shadow: 0 0 10px #fff; transform: scale(1); }
+            50% { text-shadow: 0 0 30px #ef4444, 0 0 40px #ef4444; transform: scale(1.05); }
+            100% { text-shadow: 0 0 10px #fff; transform: scale(1); }
+        }
+        .text-glow { animation: pulse-glow 1s infinite; }
+    </style>
+</head>
+<body>
+    <a href="index" style="position: fixed; top: 16px; left: 16px; z-index: 9999; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,215,0,0.4); color: #FFD700; padding: 8px 16px; border-radius: 50px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.6); font-family: sans-serif; cursor: pointer; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,215,0,0.2)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'">
+        ◀ මෙනුව
+    </a>
+
+<div class="game-container" id="mainContainer">
+    
+    <!-- Header -->
+    <div class="absolute top-4 w-full text-center z-10 pointer-events-none">
+        <h1 class="text-4xl md:text-6xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] tracking-wide">
+            අලියාට ඇහැ තැබීම
+        </h1>
+        <div class="mt-4 glass-panel inline-block px-6 py-2 pointer-events-auto">
+            <p id="gameStatus" class="text-xl md:text-3xl text-white font-bold drop-shadow-md">
+                ඉලක්කය බලාගන්න! 👀
+            </p>
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="absolute inset-0 w-full h-full">
+        
+        <!-- Timer Overlay -->
+        <div id="timerUI" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 text-9xl font-black text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] text-glow pointer-events-none">
+            3
+        </div>
+
+        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+
+        <!-- Result Screen -->
+        <div id="gameOverScreen" class="absolute inset-0 glass-panel bg-black/80 hidden flex-col items-center justify-center z-40 p-4">
+            <h2 id="resultTitle" class="text-4xl md:text-7xl font-black text-white mb-2 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] text-center">මගේ ඇහැ!</h2>
+            <p id="resultSub" class="text-lg md:text-2xl text-yellow-300 font-bold mb-4 drop-shadow-md text-center">නිරවද්‍යතාවය: 100%</p>
+            <div class="w-48 md:w-64 h-4 bg-gray-700 rounded-full mb-6 overflow-hidden border-2 border-white">
+                <div id="accuracyBar" class="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 w-0 transition-all duration-1000"></div>
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+                <button onclick="startGame()" class="px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-xl rounded-full shadow-[0_8px_15px_rgba(0,0,0,0.4)] hover:scale-105 transition-transform active:scale-95 border-2 border-white">
+                    නැවත අරඹන්න 🔄
+                </button>
+                <a href="index" style="display:inline-flex;align-items:center;padding:16px 24px;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.3);border-radius:50px;color:white;font-weight:bold;font-size:1.1rem;text-decoration:none;">
+                    ◄ මෙනුව
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('mainContainer');
+    
+    const uiStatus = document.getElementById('gameStatus');
+    const timerUI = document.getElementById('timerUI');
+    const screenGameOver = document.getElementById('gameOverScreen');
+    const txtResult = document.getElementById('resultTitle');
+    const txtSubResult = document.getElementById('resultSub');
+    const accuracyBar = document.getElementById('accuracyBar');
+
+    // Khel states (Game states)
+    let gameState = 'memorize'; // memorize, blindfolded, result
+    let timer = 3.0;
+    let particles = [];
+    let winEffect = null;
+    let cheerEffect = null;
+    
+    // Chitra load madi (Elephant Image)
+    const elephantImg = new Image();
+    elephantImg.src = './aliya.png';
+    
+    // Kannina sthana (Eye X, Y percentages based on your image)
+    const eyePercentX = 0.35;
+    const eyePercentY = 0.35;
+
+    let elephant = {
+        targetX: 0,
+        targetY: 0,
+        vars: { drawW: 0, drawH: 0, isFlipped: false, panX: 0, panY: 0 }
+    };
+
+    let playerPin = { x: 0, y: 0, active: false };
+
+    function updateTargetPosition() {
+        if (!elephantImg.complete || elephantImg.width === 0) return;
+        let localEyeX = elephant.vars.drawW * eyePercentX;
+        let localEyeY = elephant.vars.drawH * eyePercentY;
+        
+        if (elephant.vars.isFlipped) {
+            localEyeX = elephant.vars.drawW - localEyeX;
+        }
+        
+        elephant.targetX = elephant.vars.panX + localEyeX;
+        elephant.targetY = elephant.vars.panY + localEyeY;
+    }
+
+    /* Fetleka bogolo bja canvas go tlala skrine (Resize canvas dynamically) */
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        // Optional: Re-calculate bounds on resize
+        // updateTargetPosition();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(); // Set size on load
+
+    function startGame() {
+        // Stop any playing sounds
+        if (winEffect) { try { winEffect.pause(); winEffect.currentTime = 0; } catch(e){} }
+        if (cheerEffect) { try { cheerEffect.pause(); cheerEffect.currentTime = 0; } catch(e){} }
+
+        screenGameOver.style.display = 'none';
+        container.classList.remove('blindfolded');
+        
+        particles = [];
+        playerPin.active = false;
+        
+        // Randomize elephant placement inside the screen without stretching
+        elephant.vars.isFlipped = Math.random() > 0.5; // 50% chance to face opposite direction
+        
+        if (elephantImg.complete && elephantImg.width > 0) {
+            let imgAspect = elephantImg.width / elephantImg.height;
+            let scrAspect = canvas.width / canvas.height;
+            
+            // Make it occupy roughly 70% of the screen
+            if (scrAspect > imgAspect) {
+                elephant.vars.drawH = canvas.height * 0.7;
+                elephant.vars.drawW = elephant.vars.drawH * imgAspect;
+            } else {
+                elephant.vars.drawW = canvas.width * 0.7;
+                elephant.vars.drawH = elephant.vars.drawW / imgAspect;
+            }
+            
+            let maxX = Math.max(0, canvas.width - elephant.vars.drawW);
+            let maxY = Math.max(0, canvas.height - elephant.vars.drawH);
+            
+            elephant.vars.panX = Math.random() * maxX;
+            elephant.vars.panY = Math.random() * maxY;
+        }
+
+        updateTargetPosition();
+
+        startBlindfold();
+    }
+
+    function startBlindfold() {
+        gameState = 'blindfolded';
+        timerUI.style.display = 'none';
+        uiStatus.innerText = "දැන් මතකයෙන් ඇහැ තියන්න! 🙈";
+        container.classList.add('blindfolded');
+    }
+
+    // Handle Pinning
+    function handlePin(clientX, clientY) {
+        if (gameState !== 'blindfolded') return;
+
+        // Ensure exact coordinates are captured at the moment of click/tap
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        playerPin.x = (clientX - rect.left) * scaleX;
+        playerPin.y = (clientY - rect.top) * scaleY;
+
+        gameState = 'result';
+        container.classList.remove('blindfolded');
+
+        playerPin.active = true;
+
+        calculateResult();
+    }
+
+    canvas.addEventListener('mousedown', (e) => handlePin(e.clientX, e.clientY));
+    canvas.addEventListener('touchstart', (e) => {
+        if(gameState === 'blindfolded') {
+            e.preventDefault();
+            handlePin(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, {passive: false});
+
+    function calculateResult() {
+        let dist = Math.hypot(elephant.targetX - playerPin.x, elephant.targetY - playerPin.y);
+        
+        // Max distance for 0 points is 200px
+        let accuracy = Math.max(0, 100 - (dist / 2)); 
+        accuracy = Math.round(accuracy);
+
+        if (accuracy > 90) {
+            spawnParticles(playerPin.x, playerPin.y, '#4ade80', 50); // Green particles
+            try { 
+                winEffect = new Audio('cele.mp3');
+                winEffect.play(); 
+            } catch(e) {}
+            try { 
+                cheerEffect = new Audio('ye.mp3');
+                cheerEffect.play(); 
+            } catch(e) {}
+            uiStatus.innerText = "හරියටම හරි! 🎉";
+            showGameOver("සුපිරි! 🎯", accuracy, '#4ade80');
+        } else if (accuracy > 50) {
+            spawnParticles(playerPin.x, playerPin.y, '#facc15', 30);
+            uiStatus.innerText = "ගොඩක් ළඟයි! 👍";
+            showGameOver("ළඟයි! 👍", accuracy, '#facc15');
+        } else {
+            spawnParticles(playerPin.x, playerPin.y, '#f87171', 20);
+            uiStatus.innerText = "වැරදියි! ❌";
+            showGameOver("අපොයි! 😭", accuracy, '#f87171');
+        }
+    }
+
+    function showGameOver(title, acc, color) {
+        setTimeout(() => {
+            screenGameOver.style.display = 'flex';
+            txtResult.innerText = title;
+            txtResult.style.color = color;
+            txtSubResult.innerText = `නිරවද්‍යතාවය: ${acc}%`;
+            
+            // Animate bar
+            setTimeout(() => {
+                accuracyBar.style.width = `${acc}%`;
+            }, 100);
+        }, 1500); // Show result screen after 1.5s
+    }
+
+    // --- DRAWING FUNCTIONS ---
+
+    function drawEye(x, y, scale = 1) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        
+        // Outer eye shape
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-20, 0);
+        ctx.quadraticCurveTo(0, -15, 20, 0);
+        ctx.quadraticCurveTo(0, 15, -20, 0);
+        ctx.fill();
+        ctx.stroke();
+
+        // Iris
+        ctx.fillStyle = '#8b4513';
+        ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI*2); ctx.fill();
+        
+        // Pupil
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI*2); ctx.fill();
+        
+        // Shine
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(-2, -2, 2, 0, Math.PI*2); ctx.fill();
+
+        ctx.restore();
+    }
+
+    // --- EFFECTS ---
+    function spawnParticles(x, y, color, amount) {
+        for(let i=0; i<amount; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 20,
+                vy: (Math.random() - 0.5) * 20 - 5,
+                life: 1,
+                color: color,
+                size: Math.random() * 8 + 3
+            });
+        }
+    }
+
+    function drawAndCleanParticles() {
+        for(let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.5; // Gravity
+            p.life -= 0.02;
+            
+            if(p.life <= 0) {
+                particles.splice(i, 1);
+            } else {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+    }
+
+    // --- RENDER LOOP ---
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw yellow gradient background on canvas
+        const bgGrad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        bgGrad.addColorStop(0,    '#78350f');
+        bgGrad.addColorStop(0.25, '#b45309');
+        bgGrad.addColorStop(0.5,  '#d97706');
+        bgGrad.addColorStop(0.75, '#fbbf24');
+        bgGrad.addColorStop(1,    '#fde68a');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Dim the background slightly when the eye hasn't been pinned yet
+        if(gameState === 'memorize') {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Chitra draw madi (Draw Elephant Image) ONLY if not blindfolded or game is over
+        if (elephantImg.complete && gameState !== 'blindfolded') {
+            ctx.save();
+            ctx.translate(elephant.vars.panX, elephant.vars.panY);
+            
+            if (elephant.vars.isFlipped) {
+                ctx.translate(elephant.vars.drawW, 0);
+                ctx.scale(-1, 1);
+            }
+            
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 20;
+            ctx.drawImage(elephantImg, 0, 0, elephant.vars.drawW, elephant.vars.drawH);
+            ctx.restore();
+        }
+
+        // Draw Target Eye indicator (Only in memorize phase)
+        if (gameState === 'memorize') {
+            let pulse = Math.abs(Math.sin(Date.now() / 200));
+            ctx.beginPath();
+            ctx.arc(elephant.targetX, elephant.targetY, (30 + (pulse * 10)), 0, Math.PI*2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * pulse})`;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(239, 68, 68, ${0.8 * pulse})`; // Red glowing circle
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            // Draw actual eye so they know what it looks like
+            drawEye(elephant.targetX, elephant.targetY, 1);
+        }
+
+        // Draw Player's Pinned Eye
+        if (playerPin.active) {
+            drawEye(playerPin.x, playerPin.y, 1.2);
+            
+            // Show target eye in translucent if game over
+            if(gameState === 'result') {
+                ctx.globalAlpha = 0.5;
+                drawEye(elephant.targetX, elephant.targetY, 1);
+                ctx.globalAlpha = 1.0;
+
+                // Draw distance line
+                ctx.beginPath();
+                ctx.moveTo(playerPin.x, playerPin.y);
+                ctx.lineTo(elephant.targetX, elephant.targetY);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        drawAndCleanParticles();
+    }
+
+    function gameLoop() {
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Wait for the elephant image to load before starting the logic
+    elephantImg.onload = () => {
+        resizeCanvas();
+        startGame();
+        gameLoop();
+    };
+
+</script>
+<footer style="position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-family: sans-serif; font-size: 0.8rem; color: white; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9998; pointer-events: auto;">
+    Developed by <a href="https://janiruhansaga.com/" target="_blank" style="color: #FFD700; text-decoration: none; font-weight: bold;">JAniruhansaga</a>
+</footer>
+</body>
+</html>

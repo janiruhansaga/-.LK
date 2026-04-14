@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>සැඟවුණු අමුත්තා (Virtual Treasure Hunt)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans Sinhala', sans-serif; overflow: hidden; }
+    </style>
+</head>
+<body class="h-screen bg-cover bg-center flex items-center justify-center p-4 relative" style="background-image: url('start.png');">
+    <a href="index" style="position: fixed; top: 16px; left: 16px; z-index: 9999; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,215,0,0.4); color: #FFD700; padding: 8px 16px; border-radius: 50px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.6); font-family: sans-serif; cursor: pointer; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,215,0,0.2)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'">
+        ◀ මෙනුව
+    </a>
+    <div class="absolute inset-0 bg-black/50 z-0"></div>
+    
+    <div class="relative z-10 bg-white/10 backdrop-blur-lg rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/30 text-center transform hover:scale-[1.02] transition-transform duration-300">
+        <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400 mb-6 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
+            සැඟවුණු අමුත්තා
+        </h1>
+        <p class="text-white text-lg md:text-xl mb-8 font-semibold drop-shadow-md">
+            මෙම සුවිශේෂී රහස් පරීක්ෂක ගමනට<br>ඔබේ නම ඇතුළත් කරන්න:
+        </p>
+        
+        <input type="text" id="playerName" class="w-full px-6 py-4 rounded-xl border-2 border-orange-400 bg-black/40 text-white placeholder-gray-300 focus:outline-none focus:ring-4 focus:ring-orange-500/70 focus:bg-black/60 text-xl text-center mb-8 shadow-inner transition-all" placeholder="ඔබේ නම" required autocomplete="off">
+        
+        <button onclick="startHunt()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-bold rounded-xl text-2xl shadow-[0_0_15px_rgba(234,88,12,0.5)] transform transition hover:-translate-y-1 active:scale-95 border border-white/20">
+            ගවේෂණය අරඹන්න! 🚀
+        </button>
+    </div>
+
+    <script>
+        function startHunt() {
+            const nameInput = document.getElementById('playerName').value.trim();
+            if (!nameInput) {
+                alert("කරුණාකර ඉහළින් ඔබේ නම ඇතුළත් කරන්න!");
+                return;
+            }
+            try {
+                localStorage.setItem('th_player_name', nameInput);
+                localStorage.setItem('th_start_time', Date.now().toString());
+                localStorage.setItem('th_level', '1');
+            } catch(e) {}
+            window.location.href = 'level1';
+        }
+    </script>
+<footer style="position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-family: sans-serif; font-size: 0.8rem; color: white; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9998; pointer-events: auto;">
+    Developed by <a href="https://janiruhansaga.com/" target="_blank" style="color: #FFD700; text-decoration: none; font-weight: bold;">JAniruhansaga</a>
+</footer>
+</body>
+</html>

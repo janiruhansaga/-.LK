@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="si">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>රබන් ගැසීම - Avurudu Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Sinhala', sans-serif;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            background: transparent;
+            width: 100%;
+            height: 100%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+        }
+
+        .raban-bg {
+            position: absolute;
+            bottom: -150px;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, #fcd34d 0%, #b45309 80%, #78350f 100%);
+            border-radius: 50%;
+            z-index: 1;
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5), 0 -10px 50px rgba(0, 0, 0, 0.5);
+            border: 20px solid #78350f;
+            opacity: 0.9;
+        }
+
+        /* Lane Backgrounds */
+        .lanes-container {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            z-index: 5;
+        }
+
+        .lane-bg {
+            flex: 1;
+            border-left: 1px dashed rgba(255, 255, 255, 0.2);
+            border-right: 1px dashed rgba(255, 255, 255, 0.2);
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 100%);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="game-container">
+
+        <!-- Background Raban shape -->
+        <div class="raban-bg"></div>
+
+        <div class="lanes-container" id="lanesContainer">
+            <div class="lane-bg"></div>
+            <div class="lane-bg"></div>
+            <div class="lane-bg"></div>
+        </div>
+
+        <!-- UI Overlay -->
+        <div class="absolute top-4 w-full flex justify-between px-4 md:px-10 z-20 pointer-events-none">
+
+            <div class="glass-panel p-2 px-6 text-center">
+                <div class="text-white font-bold text-sm drop-shadow-md">ලකුණු (Score)</div>
+                <div id="scoreText" class="text-4xl font-black text-yellow-300 drop-shadow-md">0</div>
+            </div>
+
+            <div class="glass-panel p-2 px-4 text-center flex flex-col justify-center items-center">
+                <div class="text-white font-bold text-sm drop-shadow-md">ජීවිත (Lives)</div>
+                <div id="livesText" class="text-3xl font-black text-red-500 drop-shadow-md">❤️❤️❤️</div>
+            </div>
+        </div>
+
+        <div class="absolute top-2 w-full text-center z-20 pointer-events-none">
+            <h1
+                class="text-3xl md:text-5xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-wide">
+                රබන් ගැසීම
+            </h1>
+        </div>
+
+        <!-- The Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Controls for Mobile (Visual only, actual clicks logged via canvas/doc) -->
+        <div class="absolute bottom-4 w-full max-w-2xl px-4 flex justify-around z-20">
+            <div id="btnLeft"
+                class="glass-panel w-20 h-20 rounded-full flex items-center justify-center text-3xl opacity-50 transition-opacity">
+                🤚</div>
+            <div id="btnCenter"
+                class="glass-panel w-20 h-20 rounded-full flex items-center justify-center text-3xl opacity-50 transition-opacity">
+                🙌</div>
+            <div id="btnRight"
+                class="glass-panel w-20 h-20 rounded-full flex items-center justify-center text-3xl opacity-50 transition-opacity">
+                ✋</div>
+        </div>
+
+        <!-- Start / Game Over Screens -->
+        <div id="startScreen" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50">
+            <h1
+                class="text-5xl md:text-7xl font-black text-white mb-4 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] text-center">
+                රබන් ගැසීම</h1>
+            <p class="text-lg md:text-xl text-yellow-300 mb-8 font-bold drop-shadow-md text-center max-w-md px-4">
+                සලකුණු පහලට එන විට නියමිත වේලාවට තට්ටු කරන්න! <br> (PC: වම්/පහල/දකුණු ඊතල)
+            </p>
+            <button onclick="startGame()"
+                class="px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold text-2xl rounded-full shadow-[0_8px_0_#9a3412] border-2 border-white hover:translate-y-1 transition-transform">
+                ආරම්භ කරන්න
+            </button>
+        </div>
+
+        <div id="gameOverScreen" class="absolute inset-0 bg-black/80 hidden flex-col items-center justify-center z-50">
+            <h2
+                class="text-5xl md:text-7xl font-black text-red-500 mb-2 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] text-center">
+                තරගය අවසන්!</h2>
+            <p class="text-2xl text-white font-bold mb-2">ඔබගේ ලකුණු:</p>
+            <p id="finalScore" class="text-6xl text-yellow-400 font-black mb-8 drop-shadow-md text-center">0</p>
+            <button onclick="showStartScreen()"
+                class="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-2xl rounded-full shadow-[0_8px_15px_rgba(0,0,0,0.4)] border-2 border-white hover:scale-105 active:scale-95 transition-transform">
+                නැවත අරඹන්න 🔄
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        class DrumAudioSys {
+            constructor() { 
+                this.ctx = null; 
+                this.master = null; 
+                this.trackAudio = new Audio('raban.mp3');
+                this.trackAudio.addEventListener('ended', () => {
+                    this.trackAudio.currentTime = 0;
+                });
+                this.pauseTimer = null;
+            }
+            init() {
+                if (this.ctx) return;
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.master = this.ctx.createGain();
+                    this.master.gain.value = 0.5;
+                    this.master.connect(this.ctx.destination);
+                } catch (e) { }
+            }
+            play(type, dist) {
+                if (type === 'hit') {
+                    if (this.pauseTimer) {
+                        clearTimeout(this.pauseTimer);
+                    }
+                    this.trackAudio.volume = dist < 30 ? 1.0 : 0.6;
+                    this.trackAudio.play().catch(e => console.log('Audio error:', e));
+                    
+                    // Pause the track after a short duration to simulate playing a single "slice"
+                    this.pauseTimer = setTimeout(() => {
+                        this.trackAudio.pause();
+                    }, 400); // 400ms slice per beat
+                    
+                    return;
+                }
+
+                if (!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.connect(g); g.connect(this.master);
+                
+                if (type === 'miss') {
+                    o.type = 'sawtooth'; o.frequency.setValueAtTime(100, t);
+                    o.frequency.linearRampToValueAtTime(40, t + 0.3);
+                    g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    o.start(t); o.stop(t + 0.3);
+                } else if (type === 'lose') {
+                    o.type = 'sine'; o.frequency.setValueAtTime(150, t);
+                    o.frequency.linearRampToValueAtTime(50, t + 0.8);
+                    g.gain.setValueAtTime(0.4, t); g.gain.linearRampToValueAtTime(0, t + 0.8);
+                    o.start(t); o.stop(t + 0.8);
+                }
+            }
+        }
+        const audio = new DrumAudioSys();
+
+        // UI Elements
+        const uiScore = document.getElementById('scoreText');
+        const uiLives = document.getElementById('livesText');
+        const screenStart = document.getElementById('startScreen');
+        const screenGameOver = document.getElementById('gameOverScreen');
+        const finalScore = document.getElementById('finalScore');
+
+        const visualBtns = [
+            document.getElementById('btnLeft'),
+            document.getElementById('btnCenter'),
+            document.getElementById('btnRight')
+        ];
+
+        let cw, ch;
+        let lanes = []; // X coordinates for the 3 lanes
+        const targetYOffset = 100; // From bottom
+
+        // Game State
+        let gameState = 'start';
+        let score = 0;
+        let lives = 3;
+        let notes = [];
+        let speedMult = 1;
+        let spawnTimer = 0;
+        let particles = [];
+        let hits = [0, 0, 0]; // Visual feedback for hitting circles
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            cw = canvas.width;
+            ch = canvas.height;
+
+            // Calculate lane X positions
+            // Max width is 600px
+            let w = Math.min(cw, 600);
+            let startX = (cw - w) / 2;
+            let laneW = w / 3;
+
+            lanes = [
+                startX + laneW * 0.5,
+                startX + laneW * 1.5,
+                startX + laneW * 2.5
+            ];
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function showStartScreen() {
+            gameState = 'start';
+            screenGameOver.style.display = 'none';
+            screenStart.style.display = 'flex';
+            ctx.clearRect(0, 0, cw, ch);
+        }
+
+        function startGame() {
+            audio.init();
+            gameState = 'playing';
+            screenStart.style.display = 'none';
+            screenGameOver.style.display = 'none';
+
+            score = 0;
+            lives = 3;
+            notes = [];
+            speedMult = 1;
+            spawnTimer = 0;
+            particles = [];
+            hits = [0, 0, 0];
+
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateUI() {
+            uiScore.innerText = score;
+            let hearts = '';
+            for (let i = 0; i < 3; i++) {
+                hearts += (i < lives) ? '❤️' : '🤍';
+            }
+            uiLives.innerText = hearts;
+        }
+
+        function spawnNote() {
+            let lane = Math.floor(Math.random() * 3);
+            notes.push({
+                lane: lane,
+                y: -50,
+                active: true
+            });
+        }
+
+        function handleInput(laneIndex) {
+            if (gameState !== 'playing') return;
+
+            // Highlight button
+            visualBtns[laneIndex].style.opacity = '1';
+            visualBtns[laneIndex].style.transform = 'scale(1.1)';
+
+            setTimeout(() => {
+                visualBtns[laneIndex].style.opacity = '0.5';
+                visualBtns[laneIndex].style.transform = 'scale(1)';
+            }, 150);
+
+            // Visual flash ring
+            hits[laneIndex] = 1.0;
+
+            const targetY = ch - targetYOffset;
+            let hitSuccess = false;
+
+            // Find oldest active note in this lane
+            for (let i = 0; i < notes.length; i++) {
+                let note = notes[i];
+                if (note.lane === laneIndex && note.active) {
+                    let dist = Math.abs(note.y - targetY);
+
+                    if (dist < 80) { // Hit Window
+                        note.active = false;
+                        if (dist < 30) {
+                            score += 20;
+                            speedMult += 0.04;
+                        } else {
+                            score += 10;
+                            speedMult += 0.02;
+                        }
+                        hitSuccess = true;
+
+                        audio.play('hit', dist);
+                        // Particles
+                        createParticles(lanes[laneIndex], targetY, (dist < 30) ? '#4ade80' : '#facc15');
+                        updateUI();
+                        break;
+                    }
+                }
+            }
+
+            if (!hitSuccess) {
+                // Misclick penalty? Not strictly necessary, but good for rhythm games.
+                // Let's just create red particles
+                audio.play('miss');
+                createParticles(lanes[laneIndex], targetY, '#ef4444');
+            }
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15,
+                    color: color,
+                    life: 1
+                });
+            }
+        }
+
+        function loseLife() {
+            lives--;
+            updateUI();
+            if (lives <= 0) {
+                audio.play('lose');
+                gameState = 'gameover';
+                try { new Audio('cele.mp3').play(); } catch(e) {}
+                finalScore.innerText = score;
+                screenGameOver.style.display = 'flex';
+            } else {
+                audio.play('miss');
+            }
+        }
+
+        function update() {
+            if (gameState !== 'playing') return;
+
+            // Spawning logic
+            spawnTimer -= 0.016 * speedMult;
+            if (spawnTimer <= 0) {
+                spawnNote();
+                spawnTimer = 1.5 - (speedMult * 0.1);
+                if (spawnTimer < 0.4) spawnTimer = 0.4;
+            }
+
+            const targetY = ch - targetYOffset;
+            let baseSpeed = 5 * speedMult;
+
+            // Update Notes
+            for (let i = notes.length - 1; i >= 0; i--) {
+                let note = notes[i];
+
+                if (note.active) {
+                    note.y += baseSpeed;
+
+                    // Missed
+                    if (note.y > targetY + 80) {
+                        note.active = false;
+                        loseLife();
+                        createParticles(lanes[note.lane], targetY + 80, '#ef4444');
+                    }
+                } else {
+                    // If inactive and offscreen, remove
+                    if (note.y > ch + 100) {
+                        notes.splice(i, 1);
+                    }
+                }
+            }
+
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.05;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            // Update hit animations
+            for (let i = 0; i < 3; i++) {
+                if (hits[i] > 0) hits[i] -= 0.05;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, cw, ch);
+
+            const targetY = ch - targetYOffset;
+
+            // Draw Target Rings at the bottom
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.arc(lanes[i], targetY, 40, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                // Hit feedback ring
+                if (hits[i] > 0) {
+                    ctx.beginPath();
+                    ctx.arc(lanes[i], targetY, 40 + (1 - hits[i]) * 20, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${hits[i]})`;
+                    ctx.lineWidth = 6;
+                    ctx.stroke();
+                }
+            }
+
+            // Draw Notes
+            notes.forEach(note => {
+                if (!note.active) return;
+
+                ctx.save();
+                ctx.translate(lanes[note.lane], note.y);
+
+                // Note shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath(); ctx.arc(0, 10, 30, 0, Math.PI * 2); ctx.fill();
+
+                // Note body
+                let colors = ['#ef4444', '#facc15', '#3b82f6']; // Red, Yellow, Blue notes for different lanes
+
+                ctx.fillStyle = colors[note.lane];
+                ctx.beginPath();
+                ctx.arc(0, 0, 30, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner styling
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
+
+                ctx.restore();
+            });
+
+            // Draw Particles
+            for (let p of particles) {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.life * 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+        }
+
+        function gameLoop() {
+            if (gameState === 'playing') {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Input Events
+
+        // PC Keys
+        document.addEventListener('keydown', (e) => {
+            if (gameState !== 'playing') return;
+            if (e.key === 'ArrowLeft' || e.key === 'a') handleInput(0);
+            if (e.key === 'ArrowDown' || e.key === 's') handleInput(1);
+            if (e.key === 'ArrowRight' || e.key === 'd') handleInput(2);
+        });
+
+        // Touch / Click on screen horizontally
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            for (let i = 0; i < e.touches.length; i++) {
+                let tx = e.touches[i].clientX;
+                determineLaneClick(tx);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            determineLaneClick(e.clientX);
+        });
+
+        function determineLaneClick(x) {
+            let w = Math.min(cw, 600);
+            let startX = (cw - w) / 2;
+
+            let relativeX = x - startX;
+            if (relativeX < 0 || relativeX > w) return; // Outside lane area
+
+            let laneIndex = Math.floor(relativeX / (w / 3));
+            if (laneIndex >= 0 && laneIndex <= 2) {
+                handleInput(laneIndex);
+            }
+        }
+
+        // Initial setup
+        showStartScreen();
+
+    </script>
+</body>
+
+</html>

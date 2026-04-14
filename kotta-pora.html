@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>කොට්ට පොර - Kotta Pora</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: #07111f;
+            height: 100vh; width: 100vw; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-family: 'Noto Sans Sinhala', sans-serif;
+            user-select: none; -webkit-user-select: none;
+        }
+        canvas { display: block; touch-action: none; }
+
+        .screen {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center; padding: 20px; z-index: 50;
+        }
+        #start-screen { background: linear-gradient(160deg, #0a1628, #1e3a5f, #0a1628); }
+        #result-screen { background: rgba(5,10,20,0.97); backdrop-filter: blur(20px); display: none; }
+
+        .g-title {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: clamp(1.8rem, 6vw, 3.5rem);
+            color: #FFD700;
+            text-shadow: 0 0 30px rgba(255,215,0,0.5), 0 0 60px rgba(255,215,0,0.2);
+            margin-bottom: 6px;
+        }
+        .g-si { font-size: clamp(1.1rem, 3vw, 1.8rem); color: #f97316; margin-bottom: 20px; }
+
+        .info-box {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,215,0,0.2);
+            border-radius: 16px; padding: 16px 28px;
+            margin-bottom: 24px; max-width: 440px; text-align: left;
+        }
+        .info-box h3 { color: #fde68a; font-size: 0.88rem; letter-spacing: 1px; margin-bottom: 10px; }
+        .info-row { display:flex; align-items:center; gap:12px; color:#cbd5e1; font-size:0.9rem; margin:8px 0; }
+        .key-badge {
+            background: rgba(255,215,0,0.15); border: 1px solid rgba(255,215,0,0.4);
+            color: #FFD700; border-radius: 6px; padding: 4px 12px;
+            font-size: 0.82rem; white-space: nowrap; min-width: 48px; text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #b45309, #d97706);
+            color: #fff; border: 2px solid #FFD700;
+            padding: 13px 40px; border-radius: 50px;
+            font-size: 1.05rem; font-weight: 700; cursor: pointer;
+            font-family: 'Noto Sans Sinhala', sans-serif;
+            box-shadow: 0 0 25px rgba(255,215,0,0.35);
+            transition: transform 0.17s, box-shadow 0.17s;
+            margin: 6px; min-height: 52px;
+            -webkit-tap-highlight-color: transparent;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(255,215,0,0.6); }
+        .btn:active { transform: scale(0.97); }
+        .btn.sec { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.3); box-shadow: none; }
+
+        /* HUD */
+        #hud {
+            position: fixed; top:0; left:0; right:0;
+            display: none; padding: 10px 20px;
+            background: rgba(0,0,0,0.65); backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,215,0,0.2);
+            z-index: 10; align-items: center; gap: 14px;
+        }
+        .hud-side { flex:1; display: flex; flex-direction: column; gap: 4px; }
+        .hud-side.right { align-items: flex-end; }
+        .hud-name { font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; color: #94a3b8; text-transform: uppercase; }
+        .hud-bar-bg {
+            width: 100%; height: 13px; background: rgba(255,255,255,0.08);
+            border-radius: 7px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .hud-bar-fill { height: 100%; border-radius: 7px; transition: width 0.25s, background 0.4s; }
+        #p1-fill { background: linear-gradient(90deg,#22c55e,#86efac); width: 100%; }
+        #p2-fill { background: linear-gradient(90deg,#4361ee,#7c3aed); width: 100%; float:right; }
+        .hud-center { display:flex; flex-direction:column; align-items:center; gap:2px; min-width:60px; }
+        #round-disp { font-size: 0.7rem; color: #FFD700; font-weight: 700; letter-spacing: 1px; }
+        #score-disp { font-size: 1.1rem; font-weight: 900; color: #fff; font-family: monospace; letter-spacing: 4px; }
+
+        /* Countdown overlay */
+        #countdown-overlay {
+            position: fixed; inset:0; z-index:100;
+            display: none; align-items:center; justify-content:center;
+            background: rgba(0,0,0,0.5);
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: clamp(4rem,18vw,8rem);
+            color: #FFD700;
+            text-shadow: 0 0 40px rgba(255,215,0,0.8), 0 0 80px rgba(255,215,0,0.4);
+            pointer-events: none;
+        }
+
+        /* Mobile atk button */
+        #mobile-atk {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: none; z-index: 20;
+            width: clamp(96px, 22vw, 120px);
+            height: clamp(96px, 22vw, 120px);
+            background: radial-gradient(circle, rgba(255,140,0,0.3), rgba(180,83,9,0.15));
+            border: 3px solid rgba(255,215,0,0.55);
+            border-radius: 50%;
+            align-items: center; justify-content: center;
+            font-size: clamp(2.2rem, 7vw, 3rem);
+            cursor: pointer;
+            box-shadow: 0 0 35px rgba(255,140,0,0.35);
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.1s, background 0.1s;
+        }
+        #mobile-atk:active { background: radial-gradient(circle, rgba(255,215,0,0.45), rgba(180,83,9,0.3)); transform: translateX(-50%) scale(0.9); }
+
+        @media (max-width: 600px) {
+            #hud { padding: 7px 10px; gap: 8px; }
+            .hud-name { font-size: 0.6rem; }
+            .hud-bar-bg { height: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- BACK BUTTON -->
+<a href="index" style="position:fixed;top:16px;left:16px;z-index:9999;background:rgba(0,0,0,0.7);border:1px solid rgba(255,215,0,0.4);color:#FFD700;padding:8px 16px;border-radius:50px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:8px;backdrop-filter:blur(8px);box-shadow:0 4px 15px rgba(0,0,0,0.6);font-size:0.88rem;transition:background 0.3s;" onmouseover="this.style.background='rgba(255,215,0,0.18)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'">◀ මෙනුව</a>
+
+<!-- ══ START SCREEN ══ -->
+<div class="screen" id="start-screen">
+    <div style="font-size:clamp(2.5rem,8vw,4rem);margin-bottom:8px">🪵🥊🪵</div>
+    <div class="g-title">KOTTA PORA</div>
+    <div class="g-si">කොට්ට පොර</div>
+    <div class="info-box">
+        <h3>⚔️ ක්‍රීඩා ක්‍රමය</h3>
+        <div class="info-row"><span class="key-badge">SPACE</span>කොට්ටය ගහන්න / Attack</div>
+        <div class="info-row"><span class="key-badge">📱 Tap</span>ජංගම / Mobile tap</div>
+        <div class="info-row" style="color:#64748b;font-size:0.8rem;margin-top:6px;">
+            🏆 Best of 3 rounds — AI ජය ගත් rounds 3 ගත් කෙනා wins!
+        </div>
+        <div class="info-row" style="color:#64748b;font-size:0.8rem;">
+            💡 Cooldown bar ශේෂ නැති වූ විට ගහන්න — timing ගැලපේ නම් තල්ලු කරයි!
+        </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+        <button class="btn" onclick="startMatch()">⚔️ ක්‍රීඩාව ආරම්භ කරන්න</button>
+        <a href="index" class="btn sec">◀ මෙනුව</a>
+    </div>
+</div>
+
+<!-- ══ RESULT SCREEN ══ -->
+<div class="screen" id="result-screen">
+    <div id="res-emoji" style="font-size:clamp(3rem,10vw,5rem);margin-bottom:10px"></div>
+    <div class="g-title" id="res-title"></div>
+    <div class="g-si" id="res-sub" style="margin-bottom:12px"></div>
+    <div id="score-final" style="font-size:1.4rem;color:#FFD700;font-weight:900;margin-bottom:24px;font-family:monospace;letter-spacing:6px;"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+        <button class="btn" onclick="startMatch()">🔄 නැවත ක්‍රීඩා කරන්න</button>
+        <a href="index" class="btn sec">◀ මෙනුව</a>
+    </div>
+</div>
+
+<!-- ══ HUD ══ -->
+<div id="hud">
+    <div class="hud-side">
+        <div class="hud-name">🥊 ඔබ</div>
+        <div class="hud-bar-bg"><div class="hud-bar-fill" id="p1-fill"></div></div>
+    </div>
+    <div class="hud-center">
+        <div id="round-disp">ROUND 1</div>
+        <div id="score-disp">0 — 0</div>
+    </div>
+    <div class="hud-side right">
+        <div class="hud-name">AI 🤖</div>
+        <div class="hud-bar-bg"><div class="hud-bar-fill" id="p2-fill"></div></div>
+    </div>
+</div>
+
+<!-- Countdown overlay -->
+<div id="countdown-overlay"></div>
+
+<!-- Canvas -->
+<canvas id="c"></canvas>
+
+<!-- Mobile attack button -->
+<div id="mobile-atk">🥊</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let CW, CH;
+function resize() { CW = canvas.width = window.innerWidth; CH = canvas.height = window.innerHeight; }
+window.addEventListener('resize', () => { resize(); buildScene(); });
+resize();
+
+// ─── AUDIO ──────────────────────────────────────────────────
+let audioCtx = null;
+function ac() { if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function tone(freq, type, dur, vol, start=0) {
+    try {
+        const a = ac(), o = a.createOscillator(), g = a.createGain();
+        o.connect(g); g.connect(a.destination);
+        o.type = type; o.frequency.setValueAtTime(freq, a.currentTime+start);
+        o.frequency.exponentialRampToValueAtTime(freq*0.4, a.currentTime+start+dur);
+        g.gain.setValueAtTime(0, a.currentTime+start);
+        g.gain.linearRampToValueAtTime(vol, a.currentTime+start+0.008);
+        g.gain.exponentialRampToValueAtTime(0.001, a.currentTime+start+dur);
+        o.start(a.currentTime+start); o.stop(a.currentTime+start+dur+0.01);
+    } catch(e) {}
+}
+const sndHit   = () => { tone(220,'sawtooth',0.2,0.28); tone(160,'square',0.14,0.14,0.06); };
+const sndBlock = () => { tone(500,'triangle',0.1,0.2); tone(700,'triangle',0.07,0.15,0.05); };
+const sndFall  = () => { tone(300,'sawtooth',0.6,0.3); tone(180,'sawtooth',0.5,0.22,0.18); };
+const sndSwing = () => { tone(380,'triangle',0.1,0.12); };
+const sndWin   = () => { [500,630,750,900].forEach((f,i)=>tone(f,'sine',0.2,0.2,i*0.1)); };
+const sndCount = () => tone(660,'sine',0.15,0.3);
+
+// ═══════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const MAX_HP    = 100;
+const HIT_DMG   = 24;
+const BLOCK_DMG = 6;
+const SWING_MS  = 450;   // total swing animation time
+const CD_MS     = 750;   // cooldown between attacks
+// AI timings increase difficulty per round
+const AI_TIMING = [[1200,2400], [900,1900], [700,1500]]; // [min,max] per round
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let gameState  = 'idle';
+let matchScore = [0, 0];   // [player, AI]
+let roundNum   = 0;
+let p1, p2, scene;
+let particles  = [];
+let waterT     = 0;
+let logBob     = 0;
+
+// ═══════════════════════════════════════════════════════════
+// SCENE
+// ═══════════════════════════════════════════════════════════
+function buildScene() {
+    const logY  = CH * 0.60;
+    const logW  = Math.min(CW * 0.76, 700);
+    const logXL = (CW - logW) / 2;
+    const logXR = logXL + logW;
+    const logTh = Math.max(22, CH * 0.044);
+    scene = {
+        logY, logXL, logXR, logTh,
+        p1X: logXL + logW * 0.28,
+        p2X: logXL + logW * 0.72,
+        gndY: logY,
+        waterY: logY + logTh / 2 + 18
+    };
+}
+buildScene();
+
+// ═══════════════════════════════════════════════════════════
+// PLAYER
+// ═══════════════════════════════════════════════════════════
+function makePlayer(isAI) {
+    return {
+        isAI,
+        hp: MAX_HP,
+        swingT: 0,
+        coolT:  0,
+        wobbleAmt: 0,
+        wobblePhase: 0,
+        fallProg: -1,  // -1 = not falling; 0..1 = falling anim
+        aiTimer: randAI(0)
+    };
+}
+function randAI(rd = Math.min(roundNum, 2)) {
+    const [mn, mx] = AI_TIMING[rd];
+    return mn + Math.random() * (mx - mn);
+}
+
+// ═══════════════════════════════════════════════════════════
+// INPUT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); tryPlayerAttack(); }
+});
+document.getElementById('mobile-atk').addEventListener('touchstart', e => {
+    e.preventDefault(); tryPlayerAttack();
+}, { passive:false });
+canvas.addEventListener('touchstart', e => { e.preventDefault(); tryPlayerAttack(); }, { passive:false });
+
+function tryPlayerAttack() {
+    if (gameState !== 'playing') return;
+    if (p1.fallProg >= 0 || p2.fallProg >= 0) return;
+    if (p1.coolT > 0) return;
+    p1.swingT = SWING_MS;
+    p1.coolT  = CD_MS;
+    sndSwing();
+    // Damage resolves at mid-swing (250ms in)
+    setTimeout(() => resolveHit(p1, p2), SWING_MS * 0.55);
+}
+
+function aiTryAttack() {
+    if (gameState !== 'playing') return;
+    if (p2.coolT > 0) return;
+    p2.swingT = SWING_MS;
+    p2.coolT  = CD_MS;
+    sndSwing();
+    setTimeout(() => resolveHit(p2, p1), SWING_MS * 0.55);
+}
+
+// ═══════════════════════════════════════════════════════════
+// COMBAT
+// ═══════════════════════════════════════════════════════════
+function resolveHit(atk, def) {
+    if (gameState !== 'playing') return;
+    const isBlocking = def.swingT > SWING_MS * 0.35; // defender mid-swing = block window
+    const dmg = isBlocking ? BLOCK_DMG : (HIT_DMG + Math.floor(Math.random()*10));
+    
+    def.hp = Math.max(0, def.hp - dmg);
+    def.wobbleAmt   = isBlocking ? 7 : 20;
+    def.wobblePhase = 0;
+
+    const defX = def.isAI ? scene.p2X : scene.p1X;
+    spawnParticles(defX, scene.gndY - 80, isBlocking ? '#60a5fa' : '#f97316', isBlocking ? 8 : 20);
+
+    isBlocking ? sndBlock() : sndHit();
+    updateHUD();
+
+    if (def.hp <= 0) {
+        def.fallProg = 0;
+        sndFall();
+        setTimeout(() => {
+            const winner = atk === p1 ? 'player' : 'ai';
+            endRound(winner);
+        }, 1300);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// HUD
+// ═══════════════════════════════════════════════════════════
+function updateHUD() {
+    const p1p = p1.hp / MAX_HP * 100;
+    const p2p = p2.hp / MAX_HP * 100;
+    const fill1 = document.getElementById('p1-fill');
+    const fill2 = document.getElementById('p2-fill');
+    fill1.style.width = p1p + '%';
+    fill2.style.width = p2p + '%';
+    const barColor = pct => pct > 50 ? 'linear-gradient(90deg,#22c55e,#86efac)' :
+                            pct > 25 ? 'linear-gradient(90deg,#f59e0b,#fde68a)' :
+                                       'linear-gradient(90deg,#ef4444,#fca5a5)';
+    fill1.style.background = barColor(p1p);
+    fill2.style.background = barColor(p2p);
+    document.getElementById('score-disp').textContent = `${matchScore[0]} — ${matchScore[1]}`;
+    document.getElementById('round-disp').textContent = `ROUND ${roundNum + 1}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ROUND / MATCH FLOW
+// ═══════════════════════════════════════════════════════════
+function startMatch() {
+    document.getElementById('start-screen').style.display  = 'none';
+    document.getElementById('result-screen').style.display = 'none';
+    document.getElementById('hud').style.display = 'flex';
+    if ('ontouchstart' in window) document.getElementById('mobile-atk').style.display = 'flex';
+
+    matchScore = [0, 0];
+    roundNum   = 0;
+    buildScene();
+    startRound();
+}
+
+function startRound() {
+    gameState = 'countdown';
+    buildScene();
+    p1 = makePlayer(false);
+    p2 = makePlayer(true);
+    particles = [];
+    waterT = logBob = 0;
+    updateHUD();
+
+    let count = 3;
+    const ov = document.getElementById('countdown-overlay');
+    ov.style.display = 'flex';
+    ov.textContent = count;
+    sndCount();
+
+    const tick = setInterval(() => {
+        count--;
+        if (count > 0) { ov.textContent = count; sndCount(); }
+        else {
+            ov.textContent = 'ගහන්න!';
+            setTimeout(() => { ov.style.display = 'none'; }, 600);
+            clearInterval(tick);
+            gameState = 'playing';
+            lastT = performance.now();
+            requestAnimationFrame(loop);
+        }
+    }, 900);
+}
+
+function endRound(winner) {
+    gameState = 'round_over';
+    if (winner === 'player') matchScore[0]++;
+    else                     matchScore[1]++;
+    updateHUD();
+
+    const needed = 2; // first to 2 rounds wins
+    if (matchScore[0] >= needed || matchScore[1] >= needed) {
+        setTimeout(() => endMatch(winner === 'player' ? 'player' : 'ai'), 900);
+    } else {
+        roundNum++;
+        setTimeout(() => startRound(), 1400);
+    }
+}
+
+function endMatch(winner) {
+    gameState = 'done';
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('mobile-atk').style.display = 'none';
+
+    const rs = document.getElementById('result-screen');
+    rs.style.display = 'flex';
+    document.getElementById('score-final').textContent = `${matchScore[0]} : ${matchScore[1]}`;
+
+    if (winner === 'player') {
+        document.getElementById('res-emoji').textContent = '🏆';
+        document.getElementById('res-title').textContent = 'ජය!';
+        document.getElementById('res-sub').textContent   = 'ඔබ AI ව ලෝගය ඉතිරෙවා ජය ගත්තා! 🎊';
+        rs.style.background = 'linear-gradient(160deg,rgba(0,40,0,0.98),rgba(0,0,0,0.98))';
+        sndWin();
+        try { new Audio('cele.mp3').play(); } catch(e) {}
+    } else {
+        document.getElementById('res-emoji').textContent = '😵';
+        document.getElementById('res-title').textContent = 'ශෝකයි!';
+        document.getElementById('res-sub').textContent   = 'AI ජය ගත්තා — නැවත උත්සහ කරන්න!';
+        rs.style.background = 'linear-gradient(160deg,rgba(40,0,0,0.98),rgba(0,0,0,0.98))';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PARTICLES
+// ═══════════════════════════════════════════════════════════
+function spawnParticles(x, y, color, n) {
+    for (let i = 0; i < n; i++) {
+        particles.push({
+            x, y,
+            vx: (Math.random()-0.5)*16,
+            vy: (Math.random()-0.5)*14 - 5,
+            life: 1, maxLife: 1,
+            size: Math.random()*7+3, color
+        });
+    }
+}
+
+function updateParticles(dt) {
+    const s = dt / 16.67;
+    for (let i = particles.length-1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * s; p.y += p.vy * s;
+        p.vy += 0.55 * s; p.life -= 0.025 * s;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+function drawParticles() {
+    particles.forEach(p => {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER — BACKGROUND
+// ═══════════════════════════════════════════════════════════
+function drawBg() {
+    // Sky
+    const sky = ctx.createLinearGradient(0, 0, 0, scene.waterY);
+    sky.addColorStop(0, '#050e1a');
+    sky.addColorStop(0.6, '#0e2240');
+    sky.addColorStop(1, '#0a1a33');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, CW, CH);
+
+    // Stars
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    [[0.08,0.04],[0.22,0.11],[0.5,0.07],[0.68,0.03],[0.84,0.14],
+     [0.38,0.17],[0.91,0.08],[0.14,0.21],[0.76,0.06],[0.44,0.13]].forEach(([fx,fy]) => {
+        ctx.beginPath(); ctx.arc(CW*fx, CH*fy, 1.4, 0, Math.PI*2); ctx.fill();
+    });
+
+    // Lanterns hanging top
+    drawLantern(CW * 0.18, CH * 0.22, '#ff3c3c');
+    drawLantern(CW * 0.82, CH * 0.22, '#ff8800');
+    drawLantern(CW * 0.50, CH * 0.15, '#FFD700');
+
+    // Water
+    const wg = ctx.createLinearGradient(0, scene.waterY, 0, CH);
+    wg.addColorStop(0, '#0f3b6e'); wg.addColorStop(1, '#061020');
+    ctx.fillStyle = wg; ctx.fillRect(0, scene.waterY, CW, CH);
+
+    // Water ripples
+    waterT += 0.028;
+    ctx.strokeStyle = 'rgba(80,160,255,0.18)'; ctx.lineWidth = 1.5;
+    for (let r = 0; r < 4; r++) {
+        const ry = scene.waterY + 14 + r * 22;
+        ctx.beginPath();
+        for (let x = 0; x <= CW; x += 6) {
+            const y = ry + Math.sin(x/55 + waterT + r*0.9) * 3.5;
+            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+    // Water surface shine
+    ctx.fillStyle = 'rgba(120,200,255,0.06)';
+    ctx.fillRect(0, scene.waterY, CW, 5);
+}
+
+function drawLantern(x, y, col) {
+    // Rope
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, y-12); ctx.stroke();
+    // Glow
+    const gr = ctx.createRadialGradient(x, y, 4, x, y, 48);
+    gr.addColorStop(0, col+'99'); gr.addColorStop(1,'transparent');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 48, 0, Math.PI*2); ctx.fill();
+    // Body
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.roundRect(x-10, y-15, 20, 30, 4); ctx.fill();
+    // Highlight
+    ctx.fillStyle = 'rgba(255,255,200,0.75)';
+    ctx.beginPath(); ctx.roundRect(x-4, y-7, 8, 13, 2); ctx.fill();
+    // Bottom tassel
+    ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+    for (let i=-1; i<=1; i++) {
+        ctx.beginPath(); ctx.moveTo(x+i*3, y+14); ctx.lineTo(x+i*3, y+22); ctx.stroke();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER — LOG
+// ═══════════════════════════════════════════════════════════
+function drawLog() {
+    const { logXL, logXR, logY, logTh, waterY } = scene;
+    logBob += 0.022;
+    const bob = Math.sin(logBob) * 2.8;
+    const logTop = logY - logTh / 2 + bob;
+
+    // Water reflection shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath();
+    ctx.ellipse((logXL+logXR)/2, waterY+6+bob*0.4, (logXR-logXL)/2*0.9, 11, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Main log body
+    const lg = ctx.createLinearGradient(0, logTop, 0, logTop + logTh);
+    lg.addColorStop(0, '#a0673a');
+    lg.addColorStop(0.35, '#7a4c28');
+    lg.addColorStop(0.75, '#5c361a');
+    lg.addColorStop(1, '#3d2210');
+    ctx.fillStyle = lg;
+    ctx.beginPath();
+    ctx.roundRect(logXL, logTop, logXR-logXL, logTh, logTh*0.48);
+    ctx.fill();
+
+    // Top highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.beginPath();
+    ctx.roundRect(logXL+logTh*0.5, logTop+2, logXR-logXL-logTh, logTh*0.35, logTh*0.2);
+    ctx.fill();
+
+    // Bark lines
+    ctx.strokeStyle = 'rgba(30,12,4,0.25)'; ctx.lineWidth = 1.2;
+    for (let i=1; i<3; i++) {
+        const ly = logTop + logTh*i/3;
+        ctx.beginPath(); ctx.moveTo(logXL+logTh*0.5, ly); ctx.lineTo(logXR-logTh*0.5, ly); ctx.stroke();
+    }
+
+    // End circles
+    [logXL, logXR].forEach((ex, idx) => {
+        const ecx = ex + (idx ? -1 : 1) * logTh * 0.1;
+        const rg = ctx.createRadialGradient(ecx, logTop+logTh*0.4, 2, ex, logTop+logTh/2, logTh*0.52);
+        rg.addColorStop(0, '#c8895e'); rg.addColorStop(0.5, '#8b5028'); rg.addColorStop(1, '#3d2210');
+        ctx.fillStyle = rg;
+        ctx.beginPath();
+        ctx.ellipse(ex, logTop+logTh/2, logTh*0.52, logTh*0.44, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle = '#2b1202'; ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.ellipse(ex, logTop+logTh/2, logTh*0.52, logTh*0.44, 0, 0, Math.PI*2);
+        ctx.stroke();
+        // Ring lines
+        for (let r=1; r<=3; r++) {
+            ctx.strokeStyle = `rgba(60,25,8,${0.12+r*0.06})`; ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.ellipse(ex, logTop+logTh/2, logTh*0.52*r/3.5, logTh*0.44*r/3.5, 0, 0, Math.PI*2);
+            ctx.stroke();
+        }
+    });
+
+    // Store bob offset for characters
+    scene.bob = bob;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER — CHARACTER  (clean local-coordinate system)
+// ═══════════════════════════════════════════════════════════
+function drawCharacter(p, worldX) {
+    const bob = scene.bob || 0;
+    const feetY = scene.gndY + bob;
+    const scale = Math.min(CW, CH) / 720;
+    const hr  = Math.max(18, 28 * scale);   // head radius
+    const bodyH = Math.max(40, 58 * scale);
+    const legH  = Math.max(22, 32 * scale);
+    const headY = -(legH + bodyH + hr * 1.1);
+
+    // Wobble: smooth oscillation, decays
+    let wob = 0;
+    if (p.wobbleAmt > 0) {
+        p.wobblePhase += 0.28;
+        wob = Math.sin(p.wobblePhase) * p.wobbleAmt;
+        p.wobbleAmt = Math.max(0, p.wobbleAmt - 0.6);
+    }
+
+    ctx.save();
+
+    if (p.fallProg >= 0) {
+        // Fall off the log
+        p.fallProg = Math.min(p.fallProg + 0.012, 1);
+        const fp  = p.fallProg;
+        const dir = p.isAI ? 1 : -1;
+        ctx.translate(worldX + dir * 110 * fp * fp, feetY + 120 * fp * fp);
+        ctx.rotate(dir * fp * Math.PI * 0.75);
+        ctx.translate(0, -(legH + bodyH * 0.5));
+    } else {
+        ctx.translate(worldX + wob, feetY);
+    }
+
+    const facing = p.isAI ? -1 : 1;
+
+    // ── Legs ──────────────────────────────────────────────
+    const legCol = p.isAI ? '#1e3a8a' : '#7f1d1d';
+    ctx.fillStyle = legCol;
+    [-hr*0.38, hr*0.38].forEach(lx => {
+        ctx.beginPath();
+        ctx.roundRect(lx - hr*0.24, -legH, hr*0.48, legH, hr*0.15);
+        ctx.fill();
+    });
+
+    // ── Body ──────────────────────────────────────────────
+    const bGrd = ctx.createLinearGradient(-hr, -legH-bodyH, hr, -legH);
+    bGrd.addColorStop(0, p.isAI ? '#3b82f6' : '#ef4444');
+    bGrd.addColorStop(1, p.isAI ? '#1e3a8a' : '#7f1d1d');
+    ctx.fillStyle = bGrd;
+    ctx.beginPath();
+    ctx.roundRect(-hr*0.88, -legH-bodyH, hr*1.76, bodyH, hr*0.22);
+    ctx.fill();
+    // Shirt line
+    ctx.strokeStyle = p.isAI ? 'rgba(59,130,246,0.35)' : 'rgba(239,68,68,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-hr*0.88, -legH-bodyH*0.55);
+    ctx.lineTo(hr*0.88, -legH-bodyH*0.55);
+    ctx.stroke();
+
+    // ── Head ──────────────────────────────────────────────
+    const hGrd = ctx.createRadialGradient(-hr*0.3, headY-hr*0.25, hr*0.08, 0, headY, hr);
+    hGrd.addColorStop(0, '#fcdbb5'); hGrd.addColorStop(1, '#c0784a');
+    ctx.fillStyle = hGrd;
+    ctx.beginPath(); ctx.arc(0, headY, hr, 0, Math.PI*2); ctx.fill();
+
+    // Hair
+    ctx.fillStyle = '#2d1810';
+    ctx.beginPath();
+    ctx.arc(0, headY-hr*0.15, hr*0.95, Math.PI*1.08, Math.PI*1.92);
+    ctx.fill();
+
+    // Eyes
+    const eyeX = facing * hr * 0.32;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.ellipse(eyeX, headY-hr*0.08, hr*0.22, hr*0.26, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#1a0800';
+    ctx.beginPath(); ctx.ellipse(eyeX + facing*hr*0.06, headY-hr*0.06, hr*0.14, hr*0.18, 0, 0, Math.PI*2); ctx.fill();
+
+    // X eyes if dead
+    if (p.hp <= 0) {
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2.5;
+        [[-1,1],[1,-1]].forEach(([sx,sy])=>{
+            ctx.beginPath(); ctx.moveTo(eyeX-hr*0.18*sx, headY-hr*0.08-hr*0.18*sy);
+            ctx.lineTo(eyeX+hr*0.18*sx, headY-hr*0.08+hr*0.18*sy); ctx.stroke();
+        });
+    }
+
+    // Mouth
+    ctx.strokeStyle = '#7a3a1a'; ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    const mouthX = eyeX * 0.6;
+    if (p.wobbleAmt > 5 || p.fallProg >= 0) {
+        ctx.arc(mouthX, headY+hr*0.38, hr*0.22, 0, Math.PI, true); // scared
+    } else {
+        ctx.arc(mouthX, headY+hr*0.30, hr*0.22, 0, Math.PI); // smile
+    }
+    ctx.stroke();
+
+    // ── Pillow Arm ─────────────────────────────────────────
+    drawArm(p, hr, legH, bodyH, facing);
+
+    ctx.restore();
+}
+
+function drawArm(p, hr, legH, bodyH, facing) {
+    const pct      = p.swingT > 0 ? p.swingT / SWING_MS : 0;
+    const swinging = p.swingT > 0;
+    const sY       = -(legH + bodyH * 0.82);  // shoulder Y (local)
+    const sX       = facing * hr * 0.8;        // shoulder X (local)
+    const armLen   = hr * 1.9;
+
+    // Swing arc: starts forward, swings back, then connects
+    // pct goes 1→0 as swing progresses
+    const baseAngle = facing > 0 ? -0.3 : Math.PI + 0.3;
+    const swingRange = facing * 2.6;
+    const angle = swinging
+        ? baseAngle + swingRange * (1 - pct)
+        : baseAngle + swingRange * 0.15;
+
+    const eX = sX + Math.cos(angle) * armLen;
+    const eY = sY + Math.sin(angle) * armLen;
+
+    // Upper arm
+    ctx.strokeStyle = p.isAI ? '#1a3380' : '#7f1d1d';
+    ctx.lineWidth   = Math.max(7, hr * 0.48);
+    ctx.lineCap     = 'round';
+    ctx.beginPath(); ctx.moveTo(sX, sY); ctx.lineTo(eX, eY); ctx.stroke();
+
+    // Forearm
+    const fAngle = angle + facing * 0.3;
+    const fLen   = armLen * 0.72;
+    const fX = eX + Math.cos(fAngle) * fLen;
+    const fY = eY + Math.sin(fAngle) * fLen;
+    ctx.lineWidth = Math.max(5, hr * 0.36);
+    ctx.beginPath(); ctx.moveTo(eX, eY); ctx.lineTo(fX, fY); ctx.stroke();
+
+    // Swing trail
+    if (swinging && pct < 0.65) {
+        ctx.strokeStyle = p.isAI ? 'rgba(147,197,253,0.22)' : 'rgba(253,230,138,0.22)';
+        ctx.lineWidth   = hr * 1.1;
+        ctx.beginPath(); ctx.moveTo(sX, sY); ctx.quadraticCurveTo(eX, eY, fX, fY); ctx.stroke();
+    }
+
+    // ── Pillow ──────────────────────────────────────────────
+    const pW     = Math.max(28, hr * 1.6);
+    const pH     = Math.max(18, hr * 0.95);
+    const pAngle = fAngle + facing * (swinging ? 0.55 : 0.1);
+
+    ctx.save();
+    ctx.translate(fX, fY);
+    ctx.rotate(pAngle);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath(); ctx.ellipse(4, 4, pW, pH*0.7, 0, 0, Math.PI*2); ctx.fill();
+
+    // Body
+    const pg = ctx.createLinearGradient(-pW, -pH, pW, pH);
+    if (p.isAI) {
+        pg.addColorStop(0,'#bfdbfe'); pg.addColorStop(0.45,'#93c5fd'); pg.addColorStop(1,'#3b82f6');
+    } else {
+        pg.addColorStop(0,'#fef9c3'); pg.addColorStop(0.45,'#fde68a'); pg.addColorStop(1,'#f59e0b');
+    }
+    ctx.fillStyle = pg;
+    ctx.beginPath(); ctx.ellipse(0, 0, pW, pH*0.7, 0, 0, Math.PI*2); ctx.fill();
+
+    // Border
+    ctx.strokeStyle = p.isAI ? 'rgba(96,165,250,0.6)' : 'rgba(245,158,11,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(0, 0, pW, pH*0.7, 0, 0, Math.PI*2); ctx.stroke();
+
+    // Seam
+    ctx.strokeStyle = p.isAI ? 'rgba(59,130,246,0.45)' : 'rgba(180,130,0,0.45)';
+    ctx.lineWidth = 1.4; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(-pW*0.65,0); ctx.lineTo(pW*0.65,0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-pH*0.55); ctx.lineTo(0,pH*0.55); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+// COOLDOWN BARS (below characters)
+// ═══════════════════════════════════════════════════════════
+function drawCooldownBar(p, worldX) {
+    if (p.fallProg >= 0) return;
+    const bob = scene.bob || 0;
+    const barW = 56, barH = 7;
+    const bx = worldX - barW/2;
+    const by = scene.gndY + bob - 160;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath(); ctx.roundRect(bx, by, barW, barH, 4); ctx.fill();
+
+    if (p.coolT > 0) {
+        const pct = 1 - p.coolT / CD_MS;
+        ctx.fillStyle = p.isAI ? '#4361ee' : '#f59e0b';
+        ctx.beginPath(); ctx.roundRect(bx, by, barW * pct, barH, 4); ctx.fill();
+    } else {
+        // Ready — pulse green
+        const pulse = 0.7 + 0.3 * Math.sin(Date.now() * 0.01);
+        ctx.fillStyle = `rgba(74,222,128,${pulse})`;
+        ctx.beginPath(); ctx.roundRect(bx, by, barW, barH, 4); ctx.fill();
+        if (!p.isAI) {
+            ctx.fillStyle = 'rgba(74,222,128,0.9)';
+            ctx.font = `bold ${Math.max(11,barW*0.22)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('READY', worldX, by - 5);
+            ctx.textAlign = 'left';
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SPACE key prompt
+// ═══════════════════════════════════════════════════════════
+function drawPrompt() {
+    if ('ontouchstart' in window) return;
+    if (p1.coolT > 0 || p1.swingT > 0 || p1.fallProg >= 0) return;
+    ctx.fillStyle = 'rgba(255,215,0,0.75)';
+    ctx.font = `bold ${Math.max(14, CW*0.018)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('[ SPACE ] ⚔️', CW/2, CH - 24);
+    ctx.textAlign = 'left';
+}
+
+// ═══════════════════════════════════════════════════════════
+// GAME LOOP
+// ═══════════════════════════════════════════════════════════
+let lastT = 0;
+function loop(now) {
+    if (gameState !== 'playing' && gameState !== 'round_over') return;
+    const dt = Math.min(now - lastT, 50);
+    lastT = now;
+
+    // Update timers
+    [p1, p2].forEach(p => {
+        if (p.swingT > 0) p.swingT = Math.max(0, p.swingT - dt);
+        if (p.coolT  > 0) p.coolT  = Math.max(0, p.coolT  - dt);
+    });
+
+    // AI logic
+    if (gameState === 'playing' && p1.fallProg < 0 && p2.fallProg < 0) {
+        p2.aiTimer -= dt;
+        if (p2.aiTimer <= 0) {
+            aiTryAttack();
+            p2.aiTimer = randAI(Math.min(roundNum, 2));
+        }
+    }
+
+    updateParticles(dt);
+
+    // Draw
+    ctx.clearRect(0, 0, CW, CH);
+    drawBg();
+    drawLog();
+    drawParticles();
+    drawCharacter(p2, scene.p2X);
+    drawCharacter(p1, scene.p1X);
+    drawCooldownBar(p1, scene.p1X);
+    drawCooldownBar(p2, scene.p2X);
+    drawPrompt();
+
+    requestAnimationFrame(loop);
+}
+</script>
+<footer style="position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-family: sans-serif; font-size: 0.8rem; color: white; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9998; pointer-events: auto;">
+    Developed by <a href="https://janiruhansaga.com/" target="_blank" style="color: #FFD700; text-decoration: none; font-weight: bold;">JAniruhansaga</a>
+</footer>
+</body>
+</html>

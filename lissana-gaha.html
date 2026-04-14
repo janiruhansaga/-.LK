@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="si">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ලිස්සන ගහ නැගීම - Avurudu Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Sinhala', sans-serif;
+            background-color: #0f172a;
+            background-image: url('lissana.png');
+            background-size: cover;
+            background-position: center bottom;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            background: transparent;
+            width: 100%;
+            height: 100%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-action {
+            transition: all 0.1s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            z-index: 10;
+        }
+
+        .btn-action:active {
+            transform: scale(0.92) translateY(4px);
+            box-shadow: 0 0px 0px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        .fill-bar {
+            transition: width 0.1s linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="index" style="position: absolute; top: 16px; left: 16px; z-index: 9999; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,215,0,0.4); color: #FFD700; padding: 8px 16px; border-radius: 50px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.6); font-family: sans-serif; cursor: pointer; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,215,0,0.2)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'">
+        ◀ මෙනුව
+    </a>
+    <div class="game-container">
+
+        <!-- Header/Title -->
+        <div class="absolute top-4 w-full text-center z-20 floating">
+            <h1
+                class="text-3xl md:text-5xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-wide">
+                ලිස්සන ගහ නැගීම
+            </h1>
+        </div>
+
+        <!-- UI Overlay -->
+        <div class="absolute top-16 md:top-20 w-full max-w-lg px-4 z-20 flex justify-between gap-4">
+
+            <!-- Timer -->
+            <div class="glass-panel p-2 flex-1 text-center">
+                <div class="text-white font-bold text-xs md:text-sm mb-1 drop-shadow-md">කාලය (Time)</div>
+                <div id="timeText" class="text-2xl md:text-3xl font-black text-yellow-300 drop-shadow-md">30s</div>
+            </div>
+
+            <!-- Stamina Bar -->
+            <div class="glass-panel p-2 flex-[2] flex flex-col justify-center">
+                <div class="text-white font-bold text-xs md:text-sm mb-1 drop-shadow-md">ග්‍රහණය (Stamina)</div>
+                <div class="w-full h-4 bg-gray-900/50 rounded-full overflow-hidden border-2 border-white/80">
+                    <div id="staminaBar"
+                        class="fill-bar h-full bg-gradient-to-r from-orange-400 to-red-500 w-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div
+            class="absolute left-2 md:left-10 top-1/2 -translate-y-1/2 glass-panel w-12 h-[60vh] flex flex-col justify-end p-1 z-20 hidden md:flex">
+            <div class="w-full bg-green-500/50 h-full rounded-full relative">
+                <div id="progressIndicator"
+                    class="absolute bottom-0 left-0 w-full h-8 bg-yellow-400 rounded-full shadow-[0_0_10px_yellow] transition-all"
+                    style="bottom: 0%;"></div>
+                <div class="absolute top-0 text-2xl w-full text-center -mt-8">🏆</div>
+            </div>
+        </div>
+
+        <!-- The Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Controls -->
+        <div class="absolute bottom-10 w-full flex justify-center z-20 px-4">
+            <button id="btnClimb"
+                class="btn-action bg-gradient-to-b from-green-400 to-green-600 text-white py-4 px-12 md:px-24 rounded-3xl font-black text-3xl md:text-4xl shadow-[0_10px_0_#166534,0_15px_20px_rgba(0,0,0,0.4)] border-2 border-green-300">
+                නගින්න! 🧗‍♂️
+            </button>
+        </div>
+
+        <!-- Start / Game Over Screens -->
+        <div id="startScreen" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50">
+            <h1
+                class="text-5xl md:text-7xl font-black text-white mb-4 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] text-center">
+                ලිස්සන ගහ</h1>
+            <p class="text-lg md:text-xl text-yellow-300 mb-8 font-bold drop-shadow-md text-center max-w-md px-4">
+                කාලය අවසන් වීමට පෙර ගහේ මුදුනට නගින්න. දිගටම ක්ලික් කලහොත් ග්‍රහණය (Stamina) අඩුවී පහලට ලිස්සා යා හැක!<br><br>
+                <span class="text-red-400">⚠️ බඹර වද (Wasp Nests) ගැන සැළකිලිමත් වන්න! ඒවා ක්‍රියාකාරී (රතු පැහැ) වූ විට ඒ අසලින් ගියහොත් පහළට ලිස්සා යයි!</span>
+            </p>
+            <button onclick="startGame()"
+                class="px-8 py-4 bg-gradient-to-r from-blue-400 to-blue-600 text-white font-bold text-2xl rounded-full shadow-[0_8px_0_#1e3a8a] border-2 border-white hover:translate-y-1 transition-transform">
+                ආරම්භ කරන්න
+            </button>
+        </div>
+
+        <div id="gameOverScreen" class="absolute inset-0 bg-black/80 hidden flex-col items-center justify-center z-50">
+            <h2 id="resultTitle"
+                class="text-5xl md:text-7xl font-black text-white mb-2 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] text-center">
+                ඔබ දිනුම්!</h2>
+            <p id="resultSub" class="text-xl md:text-2xl text-yellow-300 font-bold mb-8 drop-shadow-md text-center">
+                නියමයි! ගමේ චැම්පියන් ඔබයි!</p>
+            <button onclick="showStartScreen()"
+                class="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-2xl rounded-full shadow-[0_8px_15px_rgba(0,0,0,0.4)] border-2 border-white hover:scale-105 active:scale-95 transition-transform">
+                නැවත අරඹන්න 🔄
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        class AudioSys {
+            constructor() { this.ctx = null; this.master = null; }
+            init() {
+                if (this.ctx) return;
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.master = this.ctx.createGain();
+                    this.master.gain.value = 0.5;
+                    this.master.connect(this.ctx.destination);
+                } catch (e) { }
+            }
+            play(type) {
+                if (!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.connect(g); g.connect(this.master);
+                if (type === 'climb') {
+                    o.type = 'sine'; o.frequency.setValueAtTime(300, t);
+                    o.frequency.exponentialRampToValueAtTime(600, t + 0.1);
+                    g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+                    o.start(t); o.stop(t + 0.1);
+                } else if (type === 'slide') {
+                    o.type = 'sawtooth'; o.frequency.setValueAtTime(150, t);
+                    o.frequency.linearRampToValueAtTime(80, t + 0.3);
+                    g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    o.start(t); o.stop(t + 0.3);
+                } else if (type === 'win') {
+                    o.type = 'square'; o.frequency.setValueAtTime(400, t);
+                    o.frequency.setValueAtTime(600, t + 0.1); o.frequency.setValueAtTime(800, t + 0.2);
+                    g.gain.setValueAtTime(0.4, t); g.gain.linearRampToValueAtTime(0, t + 0.4);
+                    o.start(t); o.stop(t + 0.4);
+                } else if (type === 'lose') {
+                    o.type = 'sawtooth'; o.frequency.setValueAtTime(200, t);
+                    o.frequency.linearRampToValueAtTime(50, t + 0.5);
+                    g.gain.setValueAtTime(0.5, t); g.gain.linearRampToValueAtTime(0, t + 0.5);
+                    o.start(t); o.stop(t + 0.5);
+                }
+            }
+        }
+        const audio = new AudioSys();
+        let bgmAudio = null;
+        let winEffect = null; 
+        try {
+            bgmAudio = new Audio('raban si.mp3');
+            bgmAudio.loop = true;
+            bgmAudio.volume = 0.4;
+        } catch(e) {}
+
+        // UI
+        const staminaBar = document.getElementById('staminaBar');
+        const timeText = document.getElementById('timeText');
+        const progressIndicator = document.getElementById('progressIndicator');
+        const btnClimb = document.getElementById('btnClimb');
+
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultSub = document.getElementById('resultSub');
+
+        let cw, ch;
+
+        // Game State
+        let gameState = 'start'; // start, playing, gameover
+        let heightReached = 0; // 0 to 100
+        let stamina = 100; // 0 to 100
+        let timeLeft = 30;
+
+        let lastTime = 0;
+        let cameraY = 0;
+        let clouds = [];
+        let particles = [];
+
+        let isClimbing = false;
+        let slideSpeed = 0;
+        let waspNests = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            cw = canvas.width;
+            ch = canvas.height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function initClouds() {
+            clouds = [];
+            for (let i = 0; i < 10; i++) {
+                clouds.push({
+                    x: Math.random() * cw,
+                    y: Math.random() * (ch * 2) - ch,
+                    s: Math.random() * 0.5 + 0.5
+                });
+            }
+        }
+
+        function showStartScreen() {
+            // Stop any playing sounds
+            if(bgmAudio) { try { bgmAudio.pause(); bgmAudio.currentTime = 0; } catch(e){} }
+            if(winEffect) { try { winEffect.pause(); winEffect.currentTime = 0; } catch(e){} }
+
+            gameState = 'start';
+            gameOverScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            btnClimb.style.display = 'none';
+            resize();
+            initClouds();
+            cameraY = 0;
+            heightReached = 0;
+            drawEnvironment();
+        }
+
+        function startGame() {
+            audio.init();
+            if(bgmAudio) {
+                try { bgmAudio.play(); } catch(e) {}
+            }
+            gameState = 'playing';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            btnClimb.style.display = 'block';
+
+            heightReached = 0;
+            stamina = 100;
+            timeLeft = 30;
+            slideSpeed = 0;
+            waspNests = [
+                { baseHeight: 25, active: false, timer: Math.random() * 3 },
+                { baseHeight: 55, active: false, timer: Math.random() * 3 },
+                { baseHeight: 85, active: false, timer: Math.random() * 3 }
+            ];
+
+            staminaBar.style.width = '100%';
+            timeText.innerText = '30s';
+
+            lastTime = Date.now();
+            initClouds();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame(isWin) {
+            if(bgmAudio) {
+                try { bgmAudio.pause(); } catch(e) {}
+            }
+            gameState = 'gameover';
+            btnClimb.style.display = 'none';
+            gameOverScreen.style.display = 'flex';
+
+            if (isWin) {
+                audio.play('win');
+                try { 
+                    winEffect = new Audio('cele.mp3');
+                    winEffect.play(); 
+                } catch(e) {}
+                resultTitle.innerText = "ඔබ දිනුම්! 🏆";
+                resultTitle.style.color = '#4ade80';
+                resultSub.innerText = `තත්පර ${30 - Math.ceil(timeLeft)} කින් ගහ මුදුනට නැග්ගා!`;
+            } else {
+                audio.play('lose');
+                resultTitle.innerText = "කාලය අවසන්! 😭";
+                resultTitle.style.color = '#f87171';
+                resultSub.innerText = "අයියෝ... ලබන පාර ට්‍රයි කරමු!";
+            }
+        }
+
+        // Input Handling
+        function climb() {
+            if (gameState !== 'playing') return;
+
+            if (stamina <= 0) {
+                // Cannot climb if stamina is 0 (sliding down)
+                return;
+            }
+
+            audio.play('climb');
+            isClimbing = true;
+
+            // Climb up
+            heightReached += 2.0;
+
+            // Drain stamina
+            stamina -= 12;
+            if (stamina < 0) {
+                stamina = 0;
+                slideSpeed = Math.random() * 0.5 + 0.5; // Trigger slide
+                audio.play('slide');
+            }
+
+            // Particles
+            for (let i = 0; i < 3; i++) {
+                particles.push({
+                    x: cw / 2 + (Math.random() - 0.5) * 40,
+                    y: ch / 2 + 30 + (Math.random() - 0.5) * 20,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: Math.random() * 2 + 1,
+                    life: 1
+                });
+            }
+
+            setTimeout(() => { isClimbing = false; }, 100);
+
+            checkWin();
+        }
+
+        function checkWin() {
+            if (heightReached >= 100) {
+                heightReached = 100;
+                endGame(true);
+            }
+        }
+
+        // Logic update
+        function update() {
+            if (gameState !== 'playing') return;
+
+            let now = Date.now();
+            let dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            // Timer countdown
+            timeLeft -= dt;
+            timeText.innerText = Math.ceil(timeLeft) + 's';
+            if (timeLeft <= 0) {
+                endGame(false);
+                return;
+            }
+
+            // Stamina Recovery
+            if (!isClimbing && stamina > 0) {
+                stamina += 10 * dt;
+                if (stamina > 100) stamina = 100;
+            }
+
+            // Wasp Nests logic
+            waspNests.forEach(nest => {
+                nest.timer += dt;
+                // 2 sec calm, 1.5 sec active
+                if (!nest.active && nest.timer > 2) {
+                    nest.active = true;
+                    nest.timer = 0;
+                } else if (nest.active && nest.timer > 1.5) {
+                    nest.active = false;
+                    nest.timer = 0;
+                }
+
+                // Collision with player
+                if (nest.active && Math.abs(heightReached - nest.baseHeight) < 4.5) {
+                    if (stamina > 0) {
+                        stamina = -1; // Force slip
+                        slideSpeed = 3.0; // Fast slip!
+                        audio.play('lose');
+                        for(let i=0; i<10; i++) {
+                            particles.push({
+                                x: cw/2, y: ch/2,
+                                vx: (Math.random() - 0.5)*10, vy: (Math.random() - 0.5)*10, life: 1.5
+                            });
+                        }
+                    }
+                }
+            });
+
+            // Sliding mechanics
+            if (stamina <= 0) {
+                // Out of stamina! Slide down fast
+                slideSpeed += 1 * dt;
+                heightReached -= (5 + slideSpeed) * dt;
+
+                if (heightReached < 0) heightReached = 0;
+
+                // Recover stamina ONLY when completely stopped sliding
+                // Actually, let's recover it slowly while sliding so player can catch themselves
+                stamina += 5 * dt;
+            } else {
+                // Normal gravity slide if not climbing
+                if (!isClimbing && heightReached > 0) {
+                    heightReached -= 2 * dt;
+                }
+                if (heightReached < 0) heightReached = 0;
+                slideSpeed = 0;
+            }
+
+            // UI updates
+            staminaBar.style.width = stamina + '%';
+
+            if (stamina < 30) {
+                staminaBar.className = "fill-bar h-full bg-gradient-to-r from-red-600 to-red-400 w-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]";
+            } else {
+                staminaBar.className = "fill-bar h-full bg-gradient-to-r from-orange-400 to-red-500 w-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]";
+            }
+
+            if (progressIndicator) {
+                progressIndicator.style.bottom = `${heightReached}%`;
+            }
+
+            // Camera Logic
+            // 100 progress = max height. Pole is long.
+            // Let's say pole visual height is 5000px
+            let targetCameraY = (heightReached / 100) * 4000;
+            cameraY += (targetCameraY - cameraY) * 0.1;
+        }
+
+        function drawEnvironment() {
+            ctx.clearRect(0, 0, cw, ch);
+
+            // Dim background slightly to separate interactive items from poster background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillRect(0, 0, cw, ch);
+
+            ctx.save();
+            ctx.translate(0, cameraY);
+
+            // Sun/Moon
+            const sunY = (ch / 2 + 200) - 4500 - 300; // Above the pole
+            ctx.beginPath();
+            ctx.arc(cw / 2 + 150, sunY, 80, 0, Math.PI * 2);
+            ctx.fillStyle = '#fde047';
+            ctx.shadowColor = '#facc15';
+            ctx.shadowBlur = 50;
+            ctx.fill();
+            ctx.shadowBlur = 0; // reset
+
+            // Draw Clouds (Improved)
+            clouds.forEach(c => {
+                c.x += 0.15;
+                if (c.x > cw + 150) c.x = -150;
+                
+                let cx = c.x, cy = c.y;
+                let s = c.s;
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(cx, cy, 40 * s, 0, Math.PI * 2);
+                ctx.arc(cx + 35 * s, cy - 25 * s, 50 * s, 0, Math.PI * 2);
+                ctx.arc(cx + 75 * s, cy - 10 * s, 45 * s, 0, Math.PI * 2);
+                ctx.arc(cx + 100 * s, cy + 10 * s, 35 * s, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Cloud shadow for depth
+                ctx.fillStyle = 'rgba(200, 210, 225, 0.5)';
+                ctx.beginPath();
+                ctx.arc(cx + 10*s, cy + 10*s, 30 * s, 0, Math.PI * 2);
+                ctx.arc(cx + 45*s, cy + 15*s, 30 * s, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            const poleCenterX = cw / 2;
+            const poleWidth = Math.min(80, cw * 0.15); // Slightly thicker pole
+
+            let groundY = ch / 2 + 300;
+            const topY = groundY - 4800; // Increased pole height visually
+
+            // Draw distant hills
+            ctx.fillStyle = '#166534';
+            ctx.beginPath();
+            ctx.ellipse(cw/4, groundY - 50, cw*0.6, 300, 0, Math.PI, 0);
+            ctx.fill();
+            ctx.fillStyle = '#15803d';
+            ctx.beginPath();
+            ctx.ellipse(cw*0.8, groundY - 80, cw*0.7, 400, 0, Math.PI, 0);
+            ctx.fill();
+
+            // Ground base
+            let grndGrad = ctx.createRadialGradient(cw/2, groundY, 0, cw/2, groundY, cw);
+            grndGrad.addColorStop(0, '#22c55e');
+            grndGrad.addColorStop(1, '#14532d');
+            ctx.fillStyle = grndGrad;
+            ctx.beginPath();
+            ctx.ellipse(cw / 2, groundY, cw*1.2, 250, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // The Greasy Pole (Wood Texture)
+            const pGrad = ctx.createLinearGradient(poleCenterX - poleWidth / 2, 0, poleCenterX + poleWidth / 2, 0);
+            pGrad.addColorStop(0, '#451a03'); // Dark brown edge
+            pGrad.addColorStop(0.2, '#78350f'); // Wood
+            pGrad.addColorStop(0.5, '#b45309'); // Highlight
+            pGrad.addColorStop(0.8, '#78350f'); // Wood
+            pGrad.addColorStop(1, '#451a03'); // Dark edge
+            
+            ctx.fillStyle = pGrad;
+            ctx.fillRect(poleCenterX - poleWidth / 2, topY, poleWidth, groundY - topY);
+            
+            // Wood grains / lines
+            ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+            ctx.lineWidth = 2;
+            for(let gY = topY; gY < groundY; gY += 40) {
+                ctx.beginPath();
+                ctx.moveTo(poleCenterX - poleWidth/2 + 5, gY);
+                ctx.quadraticCurveTo(poleCenterX, gY + 20 + Math.random()*20, poleCenterX + poleWidth/2 - 5, gY + 10);
+                ctx.stroke();
+            }
+
+            // Greasy shiny patches
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            for (let py = topY + 50; py < groundY - 100; py += 120) {
+                let pWidth = poleWidth - 10 - Math.random() * 20;
+                let px = poleCenterX - pWidth / 2;
+                ctx.beginPath();
+                ctx.roundRect(px, py + Math.random() * 50, pWidth, 60 + Math.random()*40, 10);
+                ctx.fill();
+                // Sub-highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.fillRect(px + 5, py + 10 + Math.random() * 20, 5, 30);
+            }
+
+            // Flag at the top
+            ctx.fillStyle = '#ef4444';
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            let wave = Math.sin(Date.now() / 200) * 10;
+            ctx.moveTo(poleCenterX, topY + 10);
+            ctx.quadraticCurveTo(poleCenterX + 50, topY + 5 + wave, poleCenterX + 100, topY + 20);
+            ctx.quadraticCurveTo(poleCenterX + 50, topY + 40 + wave, poleCenterX, topY + 70);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Flag pole piece
+            ctx.strokeStyle = '#d4d4d8';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(poleCenterX, topY + 10);
+            ctx.lineTo(poleCenterX, topY - 120);
+            ctx.stroke();
+            // Golden tip
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(poleCenterX, topY - 120, 10, 0, Math.PI*2);
+            ctx.fill();
+
+            // Crowd silhouettes at the bottom
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            for(let i=0; i<15; i++) {
+                let silX = (cw/2 - 300) + i*40 + Math.random()*20;
+                if (Math.abs(silX - cw/2) < 100) continue; // Don't block pole
+                ctx.beginPath();
+                ctx.arc(silX, groundY - 20, 15, 0, Math.PI*2);
+                ctx.roundRect(silX - 15, groundY - 15, 30, 40, 5);
+                ctx.fill();
+            }
+
+            ctx.restore();
+
+            // Wasp Nests
+            waspNests.forEach(nest => {
+                let ny = ch / 2; // Default to mid-screen
+                // We have to calculate the visual Y of the nest independently of the moving pole, but it's attached to the pole.
+                // The pole visually moves opposite to cameraY.
+                let nestY_world = groundY - (nest.baseHeight / 100) * 4800; // World coords
+                ny = nestY_world + cameraY; // Screen coords
+
+                ctx.save();
+                
+                // Draw nest base
+                ctx.fillStyle = '#92400e'; // Dark brown
+                ctx.beginPath();
+                ctx.ellipse(poleCenterX + poleWidth/2 - 2, ny, 25, 35, 0, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Hive texture
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 2;
+                for(let i=-25; i<=25; i+=6) {
+                    ctx.beginPath(); 
+                    ctx.moveTo(poleCenterX + poleWidth/2 - 25 + Math.abs(i)/2, ny + i); 
+                    ctx.lineTo(poleCenterX + poleWidth/2 + 20 - Math.abs(i)/2, ny + i); 
+                    ctx.stroke();
+                }
+
+                if (nest.active) {
+                    // Angry glow
+                    ctx.beginPath();
+                    ctx.arc(poleCenterX + poleWidth/2, ny, 50, 0, Math.PI*2);
+                    let grad = ctx.createRadialGradient(poleCenterX + poleWidth/2, ny, 10, poleCenterX + poleWidth/2, ny, 50);
+                    grad.addColorStop(0, 'rgba(220, 38, 38, 0.4)');
+                    grad.addColorStop(1, 'rgba(220, 38, 38, 0)');
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                    
+                    // Wasps flying
+                    ctx.fillStyle = '#1e293b';
+                    for(let i=0; i<10; i++) {
+                        let wx = poleCenterX + poleWidth/2 + (Math.random() - 0.5) * 70;
+                        let wy = ny + (Math.random() - 0.5) * 70;
+                        ctx.beginPath(); ctx.arc(wx, wy, 3, 0, Math.PI*2); ctx.fill();
+                    }
+                } else {
+                    // Zs for sleeping
+                    ctx.fillStyle = '#cbd5e1';
+                    ctx.font = 'bold 20px monospace';
+                    ctx.fillText('Z', poleCenterX + poleWidth/2 + 30, ny - 10 + Math.sin(Date.now()/500)*5);
+                    ctx.font = 'bold 14px monospace';
+                    ctx.fillText('z', poleCenterX + poleWidth/2 + 45, ny - 25 + Math.sin(Date.now()/500 + 1)*5);
+                }
+                
+                ctx.restore();
+            });
+
+            let playerY = ch / 2;
+            if (cameraY < ch / 2 - 200) {
+                playerY = groundY - cameraY - 150;
+            }
+
+            drawPlayer(poleCenterX, playerY, isClimbing, stamina <= 0, poleWidth);
+
+            // Particles (Sweat / Effort)
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.03;
+                if (p.life <= 0) particles.splice(i, 1);
+                else {
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + p.life + ')';
+                    ctx.shadowColor = '#fff';
+                    ctx.shadowBlur = 5;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 4 * p.life, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+        }
+
+        function drawPlayer(px, py, climbing, sliding, pWidth) {
+            ctx.save();
+            ctx.translate(px, py);
+
+            let slipAngle = sliding ? 0.3 : 0;
+            let climbOffset = climbing ? -20 : 0;
+            let armStretch = climbing ? 10 : 0;
+
+            ctx.rotate(slipAngle);
+            
+            // Drop shadow for player
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 10;
+            ctx.shadowOffsetY = 10;
+
+            // Arms behind pole
+            ctx.strokeStyle = '#b67a57';
+            ctx.lineWidth = 14;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            
+            let armBaseY = climbOffset - 10;
+            let armGripY = -30 - armStretch;
+            
+            // Left arm
+            ctx.moveTo(-15, armBaseY);
+            ctx.lineTo(-pWidth/2 - 10, armBaseY - 10 - armStretch);
+            ctx.lineTo(-pWidth/2 + 10, armGripY);
+            
+            // Right arm
+            ctx.moveTo(15, armBaseY);
+            ctx.lineTo(pWidth/2 + 10, armBaseY - 10 - armStretch);
+            ctx.lineTo(pWidth/2 - 10, armGripY);
+            ctx.stroke();
+            
+            // Shoulders/Shirt top
+            ctx.fillStyle = '#dc2626'; 
+            ctx.beginPath();
+            ctx.roundRect(-25, climbOffset - 15, 50, 55, 15);
+            ctx.fill();
+            
+            // Shirt details (collar/folds)
+            ctx.strokeStyle = '#991b1b';
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(-10, climbOffset-15); ctx.lineTo(0, climbOffset); ctx.lineTo(10, climbOffset-15); ctx.stroke();
+            
+            // Sarong
+            let sarongGrad = ctx.createLinearGradient(-25, 0, 25, 0);
+            sarongGrad.addColorStop(0, '#1d4ed8');
+            sarongGrad.addColorStop(0.5, '#3b82f6');
+            sarongGrad.addColorStop(1, '#1e40af');
+            
+            ctx.fillStyle = sarongGrad;
+            ctx.beginPath();
+            ctx.roundRect(-25, climbOffset + 35, 50, 45, 8);
+            ctx.fill();
+            
+            // Sarong patterns (yellow lines)
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); 
+            ctx.moveTo(-25, climbOffset + 50); ctx.lineTo(25, climbOffset + 50);
+            ctx.moveTo(-25, climbOffset + 65); ctx.lineTo(25, climbOffset + 65);
+            ctx.stroke();
+
+            // Legs wrapping pole
+            ctx.strokeStyle = '#b67a57';
+            ctx.lineWidth = 16;
+            ctx.beginPath();
+            let legBaseY = climbOffset + 75;
+            let legGripY = climbOffset + 75 - armStretch/2; // Legs move up slightly when climbing
+            
+            // Left leg
+            ctx.moveTo(-15, legBaseY);
+            ctx.lineTo(-pWidth/2 - 5, legGripY + 20); 
+            ctx.lineTo(-pWidth/4, legGripY); 
+            // Right leg
+            ctx.moveTo(15, legBaseY);
+            ctx.lineTo(pWidth/2 + 5, legGripY + 20); 
+            ctx.lineTo(pWidth/4, legGripY);
+            ctx.stroke();
+
+            // Head
+            ctx.fillStyle = '#b67a57';
+            ctx.beginPath();
+            ctx.arc(0, climbOffset - 35, 22, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Face pointing up (Draw hair lower to simulate looking up)
+            ctx.fillStyle = '#171717';
+            ctx.beginPath();
+            ctx.arc(0, climbOffset - 35, 22, Math.PI, Math.PI * 2);
+            ctx.ellipse(0, climbOffset - 35, 22, 6, 0, 0, Math.PI);
+            ctx.fill();
+
+            // Bandana around head
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.ellipse(0, climbOffset - 40, 23, 7, 0, 0, Math.PI*2);
+            ctx.fill();
+            // Bandana knot
+            ctx.beginPath(); ctx.arc(-22, climbOffset - 40, 6, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(-22, climbOffset - 40); ctx.lineTo(-35, climbOffset - 30); ctx.lineTo(-25, climbOffset - 48); ctx.fill();
+
+            ctx.shadowBlur = 0; // reset shadow for sweat
+
+            if (sliding) {
+                ctx.fillStyle = '#60a5fa';
+                ctx.beginPath(); ctx.arc(-30, climbOffset - 25, 5, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(30, climbOffset - 15, 6, 0, Math.PI * 2); ctx.fill();
+                
+                // Visual tear / strain marks
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(-10, climbOffset-45); ctx.lineTo(-5, climbOffset-40); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(10, climbOffset-45); ctx.lineTo(5, climbOffset-40); ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            if (gameState !== 'playing') return;
+            update();
+            drawEnvironment();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Input bindings
+        btnClimb.addEventListener('touchstart', (e) => { e.preventDefault(); climb(); }, { passive: false });
+        btnClimb.addEventListener('mousedown', (e) => { e.preventDefault(); climb(); });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                climb();
+                btnClimb.style.transform = 'scale(0.9) translateY(4px)';
+                setTimeout(() => { btnClimb.style.transform = ''; }, 100);
+            }
+        });
+
+        // Start
+        showStartScreen();
+
+    </script>
+<footer style="position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-family: sans-serif; font-size: 0.8rem; color: white; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9998; pointer-events: auto;">
+    Developed by <a href="https://janiruhansaga.com/" target="_blank" style="color: #FFD700; text-decoration: none; font-weight: bold;">JAniruhansaga</a>
+</footer>
+</body>
+</html>

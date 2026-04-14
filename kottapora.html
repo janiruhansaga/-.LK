@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>සුපිරි කොට්ට පොර - Avurudu Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Sinhala', sans-serif;
+            background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+            margin: 0;
+            overflow: hidden;
+            touch-action: none; /* Prevents pull-to-refresh on mobile */
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.1"><circle cx="50" cy="50" r="40" fill="white"/></svg>');
+        }
+
+        canvas {
+            background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 60%, #a8e063 60%, #56ab2f 100%);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            border: 4px solid #fff;
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-action {
+            transition: all 0.15s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .btn-action:active {
+            transform: scale(0.92) translateY(4px);
+            box-shadow: 0 0px 0px rgba(0,0,0,0.5) !important;
+        }
+
+        /* Health Bar Animation */
+        .health-fill {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Floating animations for UI */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating { animation: float 3s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+
+<div class="game-container p-2 md:p-6">
+    
+    <!-- Header/Title -->
+    <div class="absolute top-2 md:top-6 w-full text-center z-10 floating">
+        <h1 class="text-3xl md:text-5xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-wide">
+            සුපිරි කොට්ට පොර
+        </h1>
+    </div>
+
+    <!-- Game Canvas wrapper -->
+    <div class="relative w-full max-w-4xl mt-12 md:mt-16">
+        
+        <!-- Player 1 Health -->
+        <div class="absolute top-4 left-4 glass-panel p-2 md:p-3 z-10 w-32 md:w-48">
+            <div class="text-white font-bold text-sm md:text-lg mb-1 drop-shadow-md">ඔබ (You)</div>
+            <div class="w-full h-4 md:h-6 bg-gray-900/50 rounded-full overflow-hidden border-2 border-white/80">
+                <div id="playerHealth" class="health-fill h-full bg-gradient-to-r from-green-400 to-green-300 w-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]"></div>
+            </div>
+        </div>
+
+        <!-- Enemy Health -->
+        <div class="absolute top-4 right-4 glass-panel p-2 md:p-3 z-10 w-32 md:w-48 text-right">
+            <div class="text-white font-bold text-sm md:text-lg mb-1 drop-shadow-md">ප්‍රතිවාදියා (Bot)</div>
+            <div class="w-full h-4 md:h-6 bg-gray-900/50 rounded-full overflow-hidden border-2 border-white/80 flex justify-end">
+                <div id="enemyHealth" class="health-fill h-full bg-gradient-to-l from-red-500 to-pink-500 w-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]"></div>
+            </div>
+        </div>
+
+        <!-- The Canvas -->
+        <canvas id="gameCanvas" width="800" height="450" class="w-full block"></canvas>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="absolute inset-0 glass-panel bg-black/60 hidden flex-col items-center justify-center z-20 rounded-20px m-1">
+            <h2 id="resultTitle" class="text-5xl md:text-7xl font-black text-white mb-2 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] text-center">ඔබ දිනුම්!</h2>
+            <p id="resultSub" class="text-xl md:text-2xl text-yellow-300 font-bold mb-8 drop-shadow-md">නියමයි! සුබ අලුත් අවුරුද්දක්!</p>
+            <button onclick="initGame()" class="px-8 py-4 bg-gradient-to-r from-orange-400 to-red-500 text-white font-bold text-2xl rounded-full shadow-[0_8px_15px_rgba(255,100,0,0.4)] hover:scale-105 transition-transform active:scale-95 border-2 border-white">
+                නැවත අරඹන්න 🔄
+            </button>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex w-full max-w-2xl gap-4 mt-6 px-4 z-10">
+        <button id="btnAttack" class="btn-action flex-1 bg-gradient-to-b from-red-400 to-red-600 text-white py-4 md:py-6 rounded-2xl font-black text-2xl md:text-4xl shadow-[0_8px_0_#7f1d1d,0_15px_20px_rgba(0,0,0,0.4)] border-2 border-red-300">
+            ⚔️ ගහන්න
+        </button>
+        <button id="btnBlock" class="btn-action flex-1 bg-gradient-to-b from-blue-400 to-blue-600 text-white py-4 md:py-6 rounded-2xl font-black text-2xl md:text-4xl shadow-[0_8px_0_#1e3a8a,0_15px_20px_rgba(0,0,0,0.4)] border-2 border-blue-300">
+            🛡️ බේරෙන්න
+        </button>
+    </div>
+
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Audio System
+    class AudioSys {
+        constructor() { this.ctx = null; this.master = null; }
+        init() {
+            if (this.ctx) return;
+            try {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.master = this.ctx.createGain();
+                this.master.gain.value = 0.5;
+                this.master.connect(this.ctx.destination);
+            } catch (e) { }
+        }
+        play(type) {
+            if (!this.ctx) return;
+            const t = this.ctx.currentTime;
+            const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+            o.connect(g); g.connect(this.master);
+            if (type === 'hit') {
+                o.type = 'triangle'; o.frequency.setValueAtTime(200, t);
+                o.frequency.exponentialRampToValueAtTime(50, t + 0.15);
+                g.gain.setValueAtTime(0.8, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+                o.start(t); o.stop(t + 0.15);
+                // Noise burst for pillow slap
+                const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.1, this.ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.02));
+                const src = this.ctx.createBufferSource(); src.buffer = buf;
+                const fg = this.ctx.createGain(); fg.gain.value = 0.5;
+                src.connect(fg); fg.connect(this.master); src.start(t);
+            } else if (type === 'block') {
+                o.type = 'square'; o.frequency.setValueAtTime(100, t);
+                o.frequency.exponentialRampToValueAtTime(80, t + 0.1);
+                g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+                o.start(t); o.stop(t + 0.1);
+            } else if (type === 'swing') {
+                o.type = 'sine'; o.frequency.setValueAtTime(150, t);
+                o.frequency.linearRampToValueAtTime(100, t + 0.1);
+                g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+                o.start(t); o.stop(t + 0.1);
+            } else if (type === 'fall') {
+                o.type = 'sawtooth'; o.frequency.setValueAtTime(150, t);
+                o.frequency.linearRampToValueAtTime(40, t + 0.5);
+                g.gain.setValueAtTime(0.5, t); g.gain.linearRampToValueAtTime(0, t + 0.5);
+                o.start(t); o.stop(t + 0.5);
+            } else if (type === 'win') {
+                o.type = 'square'; o.frequency.setValueAtTime(400, t);
+                o.frequency.setValueAtTime(600, t + 0.1); o.frequency.setValueAtTime(800, t + 0.2);
+                g.gain.setValueAtTime(0.4, t); g.gain.linearRampToValueAtTime(0, t + 0.4);
+                o.start(t); o.stop(t + 0.4);
+            } else if (type === 'lose') {
+                o.type = 'triangle'; o.frequency.setValueAtTime(200, t);
+                o.frequency.linearRampToValueAtTime(100, t + 0.6);
+                g.gain.setValueAtTime(0.5, t); g.gain.linearRampToValueAtTime(0, t + 0.6);
+                o.start(t); o.stop(t + 0.6);
+            }
+        }
+    }
+    const sfx = new AudioSys();
+    
+    // UI Elements
+    const hpPlayer = document.getElementById('playerHealth');
+    const hpEnemy = document.getElementById('enemyHealth');
+    const screenGameOver = document.getElementById('gameOverScreen');
+    const txtResult = document.getElementById('resultTitle');
+    const txtSubResult = document.getElementById('resultSub');
+
+    // Game Engine State
+    let gameState = 'playing'; // playing, gameover
+    let frameCount = 0;
+    let cameraShake = 0;
+
+    // Entities
+    let player, enemy;
+    let particles = [];
+    let floatingTexts = [];
+    let clouds = [];
+
+    // Initialize/Reset Game
+    function initGame() {
+        try { new Audio('kottapora.wav').play(); } catch(e) {}
+        player = { 
+            isPlayer: true, x: 330, y: 260, hp: 100, state: 'idle', 
+            animFrame: 0, skin: '#d4a373', sarong: '#2563eb', pillow: '#f8fafc',
+            fallY: 0, fallAngle: 0 
+        };
+        enemy = { 
+            isPlayer: false, x: 470, y: 260, hp: 100, state: 'idle', 
+            animFrame: 0, skin: '#bc6c25', sarong: '#dc2626', pillow: '#f1f5f9',
+            fallY: 0, fallAngle: 0 
+        };
+        
+        particles = [];
+        floatingTexts = [];
+        cameraShake = 0;
+        gameState = 'playing';
+        
+        hpPlayer.style.width = '100%';
+        hpEnemy.style.width = '100%';
+        screenGameOver.style.display = 'none';
+
+        // Generate static clouds
+        clouds = [];
+        for(let i=0; i<5; i++) {
+            clouds.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * 150 + 20,
+                speed: Math.random() * 0.5 + 0.1,
+                scale: Math.random() * 0.5 + 0.5
+            });
+        }
+
+        enemyAI();
+    }
+
+    // --- DRAWING FUNCTIONS (The "Juice") ---
+
+    function drawClouds() {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        clouds.forEach(c => {
+            c.x += c.speed;
+            if (c.x > canvas.width + 100) c.x = -100;
+            
+            ctx.save();
+            ctx.translate(c.x, c.y);
+            ctx.scale(c.scale, c.scale);
+            ctx.beginPath();
+            ctx.arc(0, 0, 20, 0, Math.PI * 2);
+            ctx.arc(25, -10, 30, 0, Math.PI * 2);
+            ctx.arc(50, 0, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+    }
+
+    function drawFlags() {
+        const colors = ['#ef4444', '#eab308', '#22c55e', '#3b82f6'];
+        for(let i=0; i<16; i++) {
+            ctx.fillStyle = colors[i % 4];
+            ctx.beginPath();
+            ctx.moveTo(i * 50, 0);
+            ctx.lineTo(i * 50 + 25, 40);
+            ctx.lineTo(i * 50 + 50, 0);
+            ctx.fill();
+        }
+        // Rope
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(800, 0);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    function drawPole() {
+        // Main shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(400, 380, 350, 20, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // The wooden pole
+        const grad = ctx.createLinearGradient(0, 310, 0, 360);
+        grad.addColorStop(0, '#a16207');
+        grad.addColorStop(0.5, '#713f12');
+        grad.addColorStop(1, '#422006');
+        
+        ctx.fillStyle = grad;
+        // Draw cylinder base
+        ctx.beginPath();
+        ctx.arc(100, 335, 25, Math.PI/2, Math.PI*1.5);
+        ctx.lineTo(700, 310);
+        ctx.arc(700, 335, 25, -Math.PI/2, Math.PI/2);
+        ctx.lineTo(100, 360);
+        ctx.fill();
+
+        // Wood lines
+        ctx.strokeStyle = '#422006';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(150, 325); ctx.lineTo(650, 325);
+        ctx.moveTo(120, 345); ctx.lineTo(680, 345);
+        ctx.stroke();
+    }
+
+    // Function to draw a beautifully styled character
+    function drawCharacter(char) {
+        ctx.save();
+        
+        let cx = char.x;
+        let cy = char.y;
+        
+        // Handle falling animation
+        if (char.state === 'falling') {
+            char.fallY += 8;
+            char.fallAngle += (char.isPlayer ? -0.1 : 0.1);
+            cx += (char.isPlayer ? -2 : 2);
+            cy += char.fallY;
+        }
+
+        ctx.translate(cx, cy);
+        if (char.state === 'falling') {
+            ctx.rotate(char.fallAngle);
+        }
+
+        const dir = char.isPlayer ? 1 : -1;
+        
+        // Breathing animation
+        let breath = (char.state === 'idle') ? Math.sin(frameCount * 0.1) * 3 : 0;
+        
+        // Attack/Block offsets
+        let armOffsetX = 0;
+        let armOffsetY = 0;
+        let bodyTilt = 0;
+        let pillowRot = 0;
+
+        if (char.state === 'attacking') {
+            armOffsetX = 40 * dir;
+            armOffsetY = 20;
+            bodyTilt = 0.2 * dir;
+            pillowRot = 1 * dir;
+        } else if (char.state === 'blocking') {
+            armOffsetX = 10 * dir;
+            armOffsetY = -20;
+            bodyTilt = -0.1 * dir;
+            pillowRot = 0.5 * dir;
+        } else if (char.state === 'hit') {
+            bodyTilt = -0.3 * dir;
+            armOffsetX = -10 * dir;
+        }
+
+        ctx.rotate(bodyTilt);
+
+        // --- Draw Sarong (Body) ---
+        ctx.fillStyle = char.sarong;
+        ctx.beginPath();
+        ctx.roundRect(-25, -20 - breath, 50, 70 + breath, 10);
+        ctx.fill();
+        // Sarong pattern (stripes)
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-25, 0); ctx.lineTo(25, 0);
+        ctx.moveTo(-25, 20); ctx.lineTo(25, 20);
+        ctx.moveTo(-25, 40); ctx.lineTo(25, 40);
+        ctx.stroke();
+
+        // Belt
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(-26, -20 - breath, 52, 10);
+
+        // --- Draw Head ---
+        ctx.fillStyle = char.skin;
+        ctx.beginPath();
+        ctx.arc(0, -55 - breath, 22, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bandana (Lansuwa)
+        ctx.fillStyle = char.sarong;
+        ctx.beginPath();
+        ctx.arc(0, -60 - breath, 22, Math.PI, 0);
+        ctx.fill();
+        ctx.fillRect(char.isPlayer ? -22 : 12, -65 - breath, 10, 20); // Tie knot
+
+        // Face (Eyes + Mouth)
+        ctx.fillStyle = '#000';
+        // Eyes
+        if (char.state === 'hit' || char.state === 'falling') {
+            // Dead eyes (X X)
+            ctx.font = '16px Arial';
+            ctx.fillText('X  X', -12, -50 - breath);
+        } else if (char.state === 'attacking') {
+            // Angry eyes
+            ctx.beginPath();
+            ctx.moveTo(-10 + (dir*5), -60 - breath); ctx.lineTo(-2 + (dir*5), -55 - breath);
+            ctx.moveTo(10 + (dir*5), -60 - breath); ctx.lineTo(2 + (dir*5), -55 - breath);
+            ctx.stroke();
+            ctx.beginPath(); ctx.arc(-5+(dir*5), -52-breath, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(5+(dir*5), -52-breath, 2, 0, Math.PI*2); ctx.fill();
+            // Yell mouth
+            ctx.beginPath(); ctx.arc(dir*5, -45-breath, 4, 0, Math.PI*2); ctx.fill();
+        } else {
+            // Normal eyes
+            ctx.beginPath(); ctx.arc(-6+(dir*5), -55-breath, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(6+(dir*5), -55-breath, 3, 0, Math.PI*2); ctx.fill();
+            // Smile
+            ctx.beginPath(); ctx.arc(dir*5, -48-breath, 4, 0, Math.PI); ctx.stroke();
+        }
+
+        // --- Draw Pillow ---
+        ctx.save();
+        let px = (dir * 30) + armOffsetX;
+        let py = -10 + armOffsetY - breath;
+        ctx.translate(px, py);
+        ctx.rotate(pillowRot);
+        
+        // Pillow shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath(); ctx.roundRect(-20, -30, 45, 65, 12); ctx.fill();
+        // Pillow body
+        ctx.fillStyle = char.pillow;
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.roundRect(-25, -35, 45, 65, 12); 
+        ctx.fill(); ctx.stroke();
+        
+        // Pillow pattern
+        ctx.fillStyle = char.sarong + '40'; // Semi transparent matching color
+        ctx.beginPath(); ctx.arc(-2, -2, 10, 0, Math.PI*2); ctx.fill();
+
+        ctx.restore();
+        ctx.restore();
+    }
+
+    // --- EFFECTS ---
+
+    function spawnParticles(x, y, color) {
+        for(let i=0; i<20; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 20,
+                vy: (Math.random() - 0.5) * 20 - 5,
+                life: 1,
+                color: color,
+                size: Math.random() * 5 + 3
+            });
+        }
+    }
+
+    function drawAndCleanParticles() {
+        for(let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.5; // Gravity
+            p.life -= 0.02;
+            
+            if(p.life <= 0) {
+                particles.splice(i, 1);
+            } else {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+    }
+
+    function spawnFloatingText(x, y, text, color) {
+        floatingTexts.push({ x: x, y: y, text: text, color: color, life: 1, vy: -2 });
+    }
+
+    function drawAndCleanFloatingTexts() {
+        ctx.font = 'bold 28px Noto Sans Sinhala, Arial';
+        ctx.textAlign = 'center';
+        for(let i = floatingTexts.length - 1; i >= 0; i--) {
+            let ft = floatingTexts[i];
+            ft.y += ft.vy;
+            ft.life -= 0.02;
+            
+            if(ft.life <= 0) {
+                floatingTexts.splice(i, 1);
+            } else {
+                ctx.globalAlpha = ft.life;
+                ctx.fillStyle = '#000'; // Stroke
+                ctx.strokeText(ft.text, ft.x, ft.y);
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.globalAlpha = 1;
+            }
+        }
+    }
+
+    // --- MAIN RENDER LOOP ---
+
+    function draw() {
+        // Clear & Background
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Screen Shake Apply
+        ctx.save();
+        if (cameraShake > 0) {
+            let sx = (Math.random() - 0.5) * cameraShake;
+            let sy = (Math.random() - 0.5) * cameraShake;
+            ctx.translate(sx, sy);
+            cameraShake *= 0.9; // Decay
+            if (cameraShake < 0.5) cameraShake = 0;
+        }
+
+        drawClouds();
+        drawFlags();
+        drawPole();
+        
+        // Draw entities
+        drawCharacter(player);
+        drawCharacter(enemy);
+        
+        drawAndCleanParticles();
+        drawAndCleanFloatingTexts();
+
+        ctx.restore(); // Restore shake
+    }
+
+    // --- GAME LOGIC ---
+
+    function performAttack(attacker, defender) {
+        if (gameState !== 'playing' || attacker.state !== 'idle') return;
+        
+        attacker.state = 'attacking';
+        sfx.play('swing');
+        
+        // Resolve hit after a slight delay (animation sync)
+        setTimeout(() => {
+            if(gameState !== 'playing') return;
+            
+            if (defender.state === 'blocking') {
+                // Blocked!
+                sfx.play('block');
+                spawnParticles(defender.x + (attacker.isPlayer ? -20 : 20), defender.y - 10, '#93c5fd');
+                spawnFloatingText(defender.x, defender.y - 40, "Blocked!", '#60a5fa');
+                cameraShake = 5;
+            } 
+            else if (defender.state !== 'falling') {
+                // Hit!
+                sfx.play('hit');
+                defender.state = 'hit';
+                let dmg = Math.floor(Math.random() * 10) + 15; // 15-25 damage
+                defender.hp -= dmg;
+                
+                // Visual juice
+                spawnParticles(defender.x, defender.y - 30, '#fbbf24');
+                spawnFloatingText(defender.x, defender.y - 50, `-${dmg}`, '#ef4444');
+                cameraShake = 15;
+                
+                // Update UI
+                if(defender.isPlayer) {
+                    hpPlayer.style.width = Math.max(0, defender.hp) + '%';
+                } else {
+                    hpEnemy.style.width = Math.max(0, defender.hp) + '%';
+                }
+
+                // Check Knockout
+                if (defender.hp <= 0) {
+                    defender.state = 'falling';
+                    sfx.play('fall');
+                    endGame(attacker.isPlayer);
+                } else {
+                    // Recover from hit
+                    setTimeout(() => { if(defender.state === 'hit') defender.state = 'idle'; }, 300);
+                }
+            }
+        }, 150);
+
+        // Reset attacker
+        setTimeout(() => {
+            if(attacker.state === 'attacking') attacker.state = 'idle';
+        }, 400);
+    }
+
+    function performBlock(char) {
+        if (gameState !== 'playing' || char.state !== 'idle') return;
+        char.state = 'blocking';
+        setTimeout(() => {
+            if(char.state === 'blocking') char.state = 'idle';
+        }, 500);
+    }
+
+    function enemyAI() {
+        if (gameState !== 'playing') return;
+        
+        if (enemy.state === 'idle') {
+            // Random decision
+            let r = Math.random();
+            // If player is attacking, high chance to block
+            if (player.state === 'attacking' && r < 0.6) {
+                performBlock(enemy);
+            } else if (r < 0.4) {
+                performAttack(enemy, player);
+            } else if (r < 0.6) {
+                performBlock(enemy);
+            }
+        }
+        
+        // Call again random time
+        setTimeout(enemyAI, 400 + Math.random() * 800);
+    }
+
+    function endGame(playerWon) {
+        gameState = 'gameover';
+        setTimeout(() => {
+            screenGameOver.style.display = 'flex';
+            if(playerWon) {
+                sfx.play('win');
+                try { new Audio('cele.mp3').play(); } catch(e) {}
+                try {
+                    let yeSound = new Audio('ye.mp3');
+                    yeSound.play();
+                } catch(e) {}
+                txtResult.innerText = "ඔබ දිනුම්! 🏆";
+                txtSubResult.innerText = "නියමයි! ගමේ චැම්පියන් ඔබයි!";
+                txtResult.style.color = '#4ade80';
+            } else {
+                sfx.play('lose');
+                txtResult.innerText = "ඔබ පරාදයි! 😭";
+                txtSubResult.innerText = "අයියෝ... ලබන පාර ට්‍රයි කරමු!";
+                txtResult.style.color = '#f87171';
+            }
+        }, 1500); // Wait for fall animation
+    }
+
+    // --- GAME LOOP ---
+    function gameLoop() {
+        frameCount++;
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // --- INPUT BINDINGS ---
+    
+    // Desktop Clicks
+    document.getElementById('btnAttack').addEventListener('mousedown', () => { sfx.init(); performAttack(player, enemy); });
+    document.getElementById('btnBlock').addEventListener('mousedown', () => { sfx.init(); performBlock(player); });
+    
+    // Mobile Touches (Prevents delay & double firing)
+    document.getElementById('btnAttack').addEventListener('touchstart', (e) => { e.preventDefault(); sfx.init(); performAttack(player, enemy); });
+    document.getElementById('btnBlock').addEventListener('touchstart', (e) => { e.preventDefault(); sfx.init(); performBlock(player); });
+
+    // Keyboard bindings
+    document.addEventListener('keydown', (e) => {
+        sfx.init();
+        if (e.key === 'a' || e.key === 'ArrowLeft') performAttack(player, enemy);
+        if (e.key === 'd' || e.key === 'ArrowRight' || e.key === 's') performBlock(player);
+    });
+
+    // START GAME
+    initGame();
+    gameLoop();
+
+</script>
+</body>
+</html>

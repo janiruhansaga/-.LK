@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="si">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>කණ මුට්ටි බිඳීම - Avurudu Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Sinhala', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+            background-color: #1e3a8a;
+            background-image: url('kana.png');
+            background-size: 3500px;
+            background-position: center;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><path d="M50,10 L54,14 L18,50 L14,46 Z" fill="%238b4513" stroke="%234a2e00" stroke-width="2"/><path d="M46,18 L42,14" stroke="%23654321" stroke-width="2"/><path d="M30,34 L26,30" stroke="%23654321" stroke-width="2"/></svg>') 14 46, auto !important;
+        }
+
+        .game-container {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: inherit;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                text-shadow: 0 0 10px #fff;
+            }
+
+            50% {
+                text-shadow: 0 0 30px #fde047, 0 0 40px #fde047;
+                transform: scale(1.05);
+            }
+
+            100% {
+                text-shadow: 0 0 10px #fff;
+            }
+        }
+
+        .text-glow {
+            animation: pulse-glow 1.5s infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="index" style="position: fixed; top: 16px; right: 16px; z-index: 9999; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,215,0,0.4); color: #FFD700; padding: 8px 16px; border-radius: 50px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.6); font-family: sans-serif; cursor: pointer; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,215,0,0.2)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'">
+        ◀ මෙනුව
+    </a>
+
+    <div class="game-container">
+
+        <!-- Header -->
+        <div class="absolute top-4 w-full text-center z-10 floating pointer-events-none">
+            <h1
+                class="text-4xl md:text-6xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] tracking-wide">
+                කණ මුට්ටි බිඳීම
+            </h1>
+            <div class="inline-block glass-panel px-6 py-2 mt-2">
+                <p id="gameStatus" class="text-xl md:text-3xl text-yellow-300 font-bold drop-shadow-md text-glow">
+                    දිනන මුට්ටිය බලාගන්න!
+                </p>
+            </div>
+        </div>
+
+        <!-- UI Overlay -->
+        <div
+            class="absolute top-4 left-4 glass-panel px-4 py-2 z-10 text-white font-bold text-lg md:text-2xl drop-shadow-md pointer-events-none">
+            🏆 <span id="scoreUI" class="text-yellow-300 text-2xl md:text-3xl ml-2">0</span>
+        </div>
+
+        <!-- Game Canvas -->
+        <canvas id="gameCanvas" class="absolute inset-0 z-0"></canvas>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen"
+            class="absolute inset-0 glass-panel bg-black/70 hidden flex-col items-center justify-center z-20 p-4 shadow-2xl backdrop-blur-md rounded-3xl">
+            <h2 id="resultTitle"
+                class="text-4xl md:text-8xl font-black text-white mb-2 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] text-center">
+                දිනුම්!</h2>
+            <p id="resultSub"
+                class="text-xl md:text-4xl text-yellow-300 font-bold mb-8 drop-shadow-md text-center bg-black/40 px-6 py-3 rounded-full border border-white/20 mt-4">
+                ඔබට කිරි ඉතිරෙනවා!</p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+                <button onclick="startLevel()"
+                    class="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-xl md:text-3xl rounded-full shadow-[0_10px_20px_rgba(255,100,0,0.5)] hover:scale-105 transition-transform active:scale-95 border-4 border-yellow-300">
+                    ඊළඟ වටය ➡️
+                </button>
+                <a href="index" style="display:inline-flex;align-items:center;padding:16px 22px;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.3);border-radius:50px;color:white;font-weight:bold;font-size:1rem;text-decoration:none;">
+                    ◀ මෙනුව
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const uiStatus = document.getElementById('gameStatus');
+        const uiScore = document.getElementById('scoreUI');
+        const screenGameOver = document.getElementById('gameOverScreen');
+        const txtResult = document.getElementById('resultTitle');
+        const txtSubResult = document.getElementById('resultSub');
+        const btnNext = screenGameOver.querySelector('button');
+
+        // Game Variables
+        let gameState = 'showing'; // showing, shuffling, ready, hitting, gameover
+        let score = 0;
+        let pots = [];
+        let particles = [];
+        let cameraShake = 0;
+        let shuffleCount = 0;
+        let maxShuffles = 8;
+        let stick = { active: false, angle: 0, targetAngle: 0, x: 0, y: 0 };
+
+        let cw = window.innerWidth;
+        let ch = window.innerHeight;
+
+        // Pot Configurations
+        let POT_RADIUS = 40;
+        let POT_Y = 220;
+        let POSITIONS = [200, 400, 600];
+
+        function resize() {
+            if (!canvas) return;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            cw = canvas.width;
+            ch = canvas.height;
+
+            let minDim = Math.min(cw, ch);
+            POT_RADIUS = Math.max(30, minDim * 0.08); // scale radius but keep minimum
+
+            // Move pots UP to not overlap the background 'Kana Mutti' text
+            POT_Y = ch * 0.38;
+
+            let gap = Math.min(cw * 0.28, POT_RADIUS * 4);
+            POSITIONS = [cw / 2 - gap, cw / 2, cw / 2 + gap];
+
+            if (pots && pots.length === 3 && gameState !== 'shuffling') {
+                pots[0].x = pots[0].targetX = POSITIONS[0];
+                pots[1].x = pots[1].targetX = POSITIONS[1];
+                pots[2].x = pots[2].targetX = POSITIONS[2];
+                pots.forEach(p => p.y = POT_Y);
+            }
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        function startLevel() {
+            try { new Audio('kanamutti.wav').play(); } catch(e) {}
+            screenGameOver.style.display = 'none';
+            particles = [];
+            cameraShake = 0;
+            shuffleCount = 0;
+            maxShuffles = Math.min(8 + (score * 2), 20); // Gets harder each win
+            stick.active = false;
+
+            // Initialize 3 pots
+            let winnerIndex = Math.floor(Math.random() * 3);
+            pots = [
+                { id: 0, x: POSITIONS[0], targetX: POSITIONS[0], y: POT_Y, isWinner: winnerIndex === 0, state: 'intact' },
+                { id: 1, x: POSITIONS[1], targetX: POSITIONS[1], y: POT_Y, isWinner: winnerIndex === 1, state: 'intact' },
+                { id: 2, x: POSITIONS[2], targetX: POSITIONS[2], y: POT_Y, isWinner: winnerIndex === 2, state: 'intact' }
+            ];
+
+            gameState = 'showing';
+            uiStatus.innerText = "දිනන මුට්ටිය බලාගන්න! 👀";
+            uiStatus.classList.add('text-glow');
+
+            // After 2 seconds, start shuffling
+            setTimeout(() => {
+                if (gameState === 'showing') {
+                    gameState = 'shuffling';
+                    uiStatus.innerText = "මුට්ටි මාරු වෙනවා! මතක තියාගන්න! 🔄";
+                    uiStatus.classList.remove('text-glow');
+                    triggerShuffle();
+                }
+            }, 2000);
+        }
+
+        function triggerShuffle() {
+            if (shuffleCount >= maxShuffles) {
+                gameState = 'ready';
+                uiStatus.innerText = "දැන් ගහන්න! දිනන මුට්ටිය තෝරන්න! 🎯";
+                uiStatus.classList.add('text-glow');
+                return;
+            }
+
+            // Pick two random positions to swap
+            let idx1 = Math.floor(Math.random() * 3);
+            let idx2 = (idx1 + Math.floor(Math.random() * 2) + 1) % 3;
+
+            let tempX = pots[idx1].targetX;
+            pots[idx1].targetX = pots[idx2].targetX;
+            pots[idx2].targetX = tempX;
+
+            shuffleCount++;
+
+            // Wait for animation to mostly finish, then shuffle again
+            // Shuffle gets faster as score goes up
+            let shuffleSpeed = Math.max(80, 250 - (score * 25));
+            setTimeout(triggerShuffle, shuffleSpeed);
+        }
+
+        function breakPot(pot) {
+            pot.state = 'broken';
+            cameraShake = 15;
+
+            // Clay particles
+            spawnParticles(pot.x, pot.y, '#b45309', 20); // Brown clay pieces
+
+            if (pot.isWinner) {
+                // Win particles (Water/Milk)
+                spawnParticles(pot.x, pot.y, '#ffffff', 40);
+                spawnParticles(pot.x, pot.y, '#93c5fd', 20);
+
+                gameState = 'gameover';
+                setTimeout(() => {
+                    score++;
+                    uiScore.innerText = score;
+                    showGameOver(true);
+                }, 1000);
+            } else {
+                // Lose particles (Dust/Sand)
+                spawnParticles(pot.x, pot.y, '#78716c', 30);
+
+                gameState = 'gameover';
+                setTimeout(() => {
+                    score = 0; // Reset score on lose
+                    uiScore.innerText = score;
+                    showGameOver(false);
+                }, 1000);
+            }
+        }
+
+        function showGameOver(isWin) {
+            screenGameOver.style.display = 'flex';
+            if (isWin) {
+                try { new Audio('cele.mp3').play(); } catch(e) {}
+                try { new Audio('ye.mp3').play(); } catch (e) { }
+                txtResult.innerText = "නියමයි! 🎉";
+                txtResult.style.color = '#4ade80';
+                txtSubResult.innerText = "ඔබ හරි මුට්ටිය බින්දා!";
+                btnNext.innerText = "ඊළඟ වටය ➡️";
+            } else {
+                txtResult.innerText = "වැරදියි! 😭";
+                txtResult.style.color = '#f87171';
+                txtSubResult.innerText = "ඒකේ තිබ්බේ වැලි! ලකුණු බිංදුවයි.";
+                btnNext.innerText = "නැවත අරඹන්න 🔄";
+
+                // Show which one was the real winner
+                pots.forEach(p => {
+                    if (p.isWinner && p.state === 'intact') {
+                        p.state = 'revealed'; // Special state to show without breaking
+                    }
+                });
+            }
+        }
+
+        // --- DRAWING FUNCTIONS ---
+
+        function drawRopeAndPole() {
+            let marginX = cw * 0.05;
+            let poleY = ch * 0.15; // 15% from top
+
+            let poleHeight = Math.max(15, POT_RADIUS * 0.6);
+
+            // Shadow for pole
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(marginX + 5, poleY - poleHeight / 2 + 10, cw - marginX * 2, poleHeight);
+
+            // Wooden Pole with gradient
+            let gradient = ctx.createLinearGradient(0, poleY - poleHeight / 2, 0, poleY + poleHeight / 2);
+            gradient.addColorStop(0, '#5c2b0b');
+            gradient.addColorStop(0.5, '#7c3f15');
+            gradient.addColorStop(1, '#421c05');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(marginX, poleY - poleHeight / 2, cw - marginX * 2, poleHeight);
+
+            // Border
+            ctx.strokeStyle = '#2b1202';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(marginX, poleY - poleHeight / 2, cw - marginX * 2, poleHeight);
+
+            // Wood texture line
+            ctx.beginPath();
+            ctx.moveTo(marginX, poleY);
+            ctx.lineTo(cw - marginX, poleY);
+            ctx.stroke();
+        }
+
+        function drawPot(pot) {
+            if (pot.state === 'broken') return;
+
+            let px = pot.x;
+            let py = pot.y;
+            let poleY = ch * 0.15;
+
+            // Draw hanging rope
+            ctx.strokeStyle = '#fef3c7'; // yellowish rope
+            ctx.lineWidth = Math.max(3, POT_RADIUS * 0.1);
+            ctx.beginPath();
+            ctx.moveTo(px, poleY);
+            ctx.lineTo(px, py - POT_RADIUS);
+            ctx.stroke();
+
+            if (pot.state === 'revealed') {
+                ctx.shadowColor = '#fde047';
+                ctx.shadowBlur = 30;
+            }
+
+            // --- Draw the Clay Pot ---
+            // Shadow underneath
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.beginPath();
+            ctx.ellipse(px + 5, py + POT_RADIUS + 5, POT_RADIUS * 0.6, POT_RADIUS * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 3D Setup
+            let potGrad = ctx.createRadialGradient(px - POT_RADIUS * 0.3, py - POT_RADIUS * 0.3, POT_RADIUS * 0.1, px, py, POT_RADIUS * 1.1);
+            potGrad.addColorStop(0, '#f59e0b'); // light orange highlight
+            potGrad.addColorStop(0.4, '#b45309'); // base clay
+            potGrad.addColorStop(1, '#451a03'); // dark edge shadow
+
+            ctx.fillStyle = potGrad;
+            ctx.strokeStyle = '#2d1302';
+            ctx.lineWidth = Math.max(1, POT_RADIUS * 0.05);
+
+            // Neck
+            let neckW = POT_RADIUS * 0.75;
+            let neckH = POT_RADIUS * 0.5;
+
+            let neckGrad = ctx.createLinearGradient(px - neckW / 2, 0, px + neckW / 2, 0);
+            neckGrad.addColorStop(0, '#8b3d07');
+            neckGrad.addColorStop(0.3, '#d97706');
+            neckGrad.addColorStop(1, '#451a03');
+            ctx.fillStyle = neckGrad;
+
+            ctx.beginPath();
+            ctx.fillRect(px - neckW / 2, py - POT_RADIUS - neckH / 2, neckW, neckH);
+            ctx.strokeRect(px - neckW / 2, py - POT_RADIUS - neckH / 2, neckW, neckH);
+
+            // Body
+            ctx.fillStyle = potGrad;
+            ctx.beginPath();
+            ctx.arc(px, py, POT_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Rim
+            let rimGrad = ctx.createLinearGradient(px - neckW * 0.6, 0, px + neckW * 0.6, 0);
+            rimGrad.addColorStop(0, '#b45309');
+            rimGrad.addColorStop(0.5, '#f59e0b');
+            rimGrad.addColorStop(1, '#78350f');
+            ctx.fillStyle = rimGrad;
+            ctx.beginPath();
+            ctx.ellipse(px, py - POT_RADIUS - neckH / 2, neckW * 0.6, neckW * 0.15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Decorative patterns (White chalk lines)
+            ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+            ctx.lineWidth = Math.max(1, POT_RADIUS * 0.05);
+            ctx.beginPath();
+            ctx.arc(px, py, POT_RADIUS, Math.PI * 0.1, Math.PI * 0.9);
+            ctx.stroke();
+
+            // Add a dot pattern
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            for (let i = 0; i < 5; i++) {
+                let a = Math.PI * 0.2 + (i * 0.15);
+                let dx = px + Math.cos(a) * (POT_RADIUS * 0.75);
+                let dy = py + Math.sin(a) * (POT_RADIUS * 0.75);
+                ctx.beginPath(); ctx.arc(dx, dy, Math.max(1, POT_RADIUS * 0.05), 0, Math.PI * 2); ctx.fill();
+            }
+
+            ctx.shadowBlur = 0; // Reset shadow
+
+            // If in 'showing' state and is winner, draw a star/glow
+            if (gameState === 'showing' && pot.isWinner) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(px, py, POT_RADIUS * 0.35, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawStick() {
+            if (!stick.active) return;
+
+            ctx.save();
+            ctx.translate(stick.x, stick.y);
+            ctx.rotate(stick.angle);
+
+            // Draw wooden stick
+            ctx.fillStyle = '#451a03';
+            ctx.beginPath();
+            ctx.roundRect(-5, -POT_RADIUS * 2.5, 10, POT_RADIUS * 2.5, 5);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // --- EFFECTS ---
+
+        function spawnParticles(x, y, color, amount) {
+            for (let i = 0; i < amount; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 25,
+                    vy: (Math.random() - 0.5) * 25 - 5,
+                    life: 1,
+                    color: color,
+                    size: Math.random() * 6 + 2
+                });
+            }
+        }
+
+        function drawAndCleanParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.8; // Gravity
+                p.life -= 0.02;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.globalAlpha = p.life;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+
+        // --- RENDER LOOP ---
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dim background slightly to separate interactive items from poster background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillRect(0, 0, cw, ch);
+
+            // Camera Shake Apply
+            ctx.save();
+            if (cameraShake > 0) {
+                let sx = (Math.random() - 0.5) * cameraShake;
+                let sy = (Math.random() - 0.5) * cameraShake;
+                ctx.translate(sx, sy);
+                cameraShake *= 0.9;
+                if (cameraShake < 0.5) cameraShake = 0;
+            }
+
+            drawRopeAndPole();
+
+            // Update and draw pots
+            pots.forEach(pot => {
+                // Lerp position for smooth shuffling
+                pot.x += (pot.targetX - pot.x) * 0.3;
+                drawPot(pot);
+            });
+
+            // Update and draw stick animation
+            if (stick.active) {
+                stick.angle += (stick.targetAngle - stick.angle) * 0.3;
+                drawStick();
+            }
+
+            drawAndCleanParticles();
+
+            ctx.restore(); // Restore shake
+        }
+
+        function gameLoop() {
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- INPUT HANDLING ---
+
+        function handleInteraction(clientX, clientY) {
+            if (gameState !== 'ready') return;
+
+            const rect = canvas.getBoundingClientRect();
+            // Scale mouse coordinates to match internal canvas resolution
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const clickX = (clientX - rect.left) * scaleX;
+            const clickY = (clientY - rect.top) * scaleY;
+
+            // Check if any pot was clicked
+            for (let i = 0; i < pots.length; i++) {
+                let pot = pots[i];
+                let dist = Math.hypot(clickX - pot.x, clickY - pot.y);
+
+                if (dist < POT_RADIUS + 20) { // Slightly larger hitbox
+                    gameState = 'hitting';
+
+                    // Animate stick
+                    stick.active = true;
+                    stick.x = pot.x + 60; // Start slightly to the right
+                    stick.y = pot.y;
+                    stick.angle = Math.PI / 4; // Start angled back
+                    stick.targetAngle = -Math.PI / 2; // Swing forward to hit
+
+                    // Break pot after stick swing animation connects
+                    setTimeout(() => {
+                        breakPot(pot);
+                        setTimeout(() => { stick.active = false; }, 300); // Hide stick
+                    }, 150);
+
+                    break;
+                }
+            }
+        }
+
+        canvas.addEventListener('mousedown', (e) => handleInteraction(e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleInteraction(e.touches[0].clientX, e.touches[0].clientY);
+        });
+
+        // START
+        startLevel();
+        gameLoop();
+
+    </script>
+<footer style="position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-family: sans-serif; font-size: 0.8rem; color: white; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9998; pointer-events: auto;">
+    Developed by <a href="https://janiruhansaga.com/" target="_blank" style="color: #FFD700; text-decoration: none; font-weight: bold;">JAniruhansaga</a>
+</footer>
+</body>
+</html>

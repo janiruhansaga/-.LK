@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>කොකිස් රේස් - Avurudu Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #000; 
+            font-family: 'Noto Sans Sinhala', sans-serif; 
+            touch-action: none; 
+            user-select: none;
+        }
+        canvas { 
+            display: block; 
+            width: 100vw; 
+            height: 100vh; 
+            object-fit: cover; 
+        }
+        .glass-panel { 
+            background: rgba(255, 255, 255, 0.15); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4); 
+            border-radius: 20px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating { animation: float 3s ease-in-out infinite; }
+        
+        @keyframes pulse-btn {
+            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(249, 115, 22, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+        }
+        .pulse-btn { animation: pulse-btn 2s infinite; }
+        
+        .score-pill {
+            background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(50,50,50,0.8));
+            border: 2px solid #fbbf24;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <a href="index" style="position: fixed; top: 16px; left: 16px; z-index: 9999; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,215,0,0.4); color: #FFD700; padding: 8px 16px; border-radius: 50px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.6); font-family: sans-serif; cursor: pointer; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,215,0,0.2)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'">
+        ◀ මෙනුව
+    </a>
+    <div class="absolute inset-0 z-10 flex flex-col pointer-events-none">
+        
+        <!-- UI top bar -->
+        <div class="w-full flex justify-between p-6 text-white font-bold text-3xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+            <div class="score-pill px-6 py-2 rounded-full pointer-events-auto flex items-center gap-3 transition-transform hover:scale-105">
+                <span class="text-2xl opacity-80">🏆 ලකුණු:</span> 
+                <span id="scoreText" class="text-yellow-400 text-4xl">0</span>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto transition-opacity duration-500">
+            <div class="glass-panel p-8 md:p-12 flex flex-col items-center max-w-2xl text-center transform hover:scale-[1.02] transition-transform duration-300 mx-4">
+                <div class="floating mb-4">
+                    <h1 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 via-orange-500 to-red-600 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] tracking-tight">කොකිස් රේස්</h1>
+                </div>
+                <p class="text-xl md:text-2xl text-yellow-100 mb-10 drop-shadow-md bg-black/40 px-6 py-3 rounded-full border border-white/20">
+                    👆 තිරය මත තට්ටු කරන්න (Tap) හෝ Space ඔබන්න
+                </p>
+                <button onclick="startGame()" class="pulse-btn px-12 py-5 bg-gradient-to-b from-orange-400 to-red-600 text-white font-black text-3xl md:text-4xl rounded-full border-4 border-yellow-300 hover:scale-105 active:scale-95 transition-all text-shadow">
+                    දුවන්න අරඹන්න 🏃
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md hidden pointer-events-auto">
+            <div class="glass-panel p-8 md:p-12 flex flex-col items-center border-red-500/50 shadow-[0_0_50px_rgba(255,0,0,0.3)] mx-4 w-full max-w-2xl">
+                <h2 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-700 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] mb-6 text-center">අපොයි හැප්පුණා!</h2>
+                <div class="bg-black/50 rounded-3xl p-6 px-12 mb-8 border border-white/10 text-center w-full">
+                    <p class="text-2xl text-gray-300 mb-2">ඔබ ලබාගත් ලකුණු:</p>
+                    <p id="finalScore" class="text-8xl text-yellow-500 font-black drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]">0</p>
+                </div>
+                <button onclick="showStartScreen()" class="px-10 py-5 bg-gradient-to-b from-blue-500 to-indigo-700 text-white font-black text-3xl rounded-full border-4 border-sky-300 hover:scale-105 active:scale-95 transition-transform pulse-btn">
+                    නැවත අරඹන්න 🔄
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- The Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // UI
+        const scoreText = document.getElementById('scoreText');
+        const finalScore = document.getElementById('finalScore');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+
+        // Assets
+        const imgBg = new Image(); imgBg.src = 'race bg.png';
+        const imgPlayer = new Image(); imgPlayer.src = '3.png';
+        const imgBox = new Image(); imgBox.src = 'box.png';
+
+        // Variables
+        let cw, ch;
+        let gameState = 'start'; // start, playing, gameover
+        let bgX = 0;
+        let score = 0;
+        let speedMult = 1;
+        let gameSpeed = 600; // base speed in pixels per second
+        let lastTime = 0;
+        
+        let player = { 
+            x: 100, 
+            y: 0, 
+            width: 90, 
+            height: 120, 
+            vy: 0, 
+            gravity: 2800, 
+            jumpForce: -1000, 
+            isGrounded: false 
+        };
+        let obstacles = [];
+        let spawnTimer = 0;
+        let groundY = 0;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            cw = canvas.width;
+            ch = canvas.height;
+            
+            groundY = ch - (ch * 0.15); // visual ground is bottom 15%
+            
+            if (gameState === 'start' || gameState === 'gameover') {
+                player.y = groundY - player.height;
+                draw(); // Refresh view
+            }
+            
+            // Adjust player position responsive to mobile
+            player.x = cw * 0.15;
+            
+            // Adjust player size relative to height scale
+            let scale = Math.min(cw/800, ch/600, 1.2);
+            player.width = 90 * scale;
+            player.height = 120 * scale;
+        }
+        window.addEventListener('resize', resize);
+        
+        // Audio system (Simple)
+        class AudioSys {
+            constructor() { this.ctx = null; this.master = null; }
+            init() {
+                if (this.ctx) return;
+                try {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.master = this.ctx.createGain(); this.master.gain.value = 0.3;
+                this.master.connect(this.ctx.destination);
+                } catch(e) {}
+            }
+            playJump() {
+                if(!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.type = 'sine'; o.frequency.setValueAtTime(300, t); o.frequency.exponentialRampToValueAtTime(600, t+0.1);
+                g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.01, t+0.1);
+                o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.1);
+            }
+            playCrash() {
+                if(!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.type = 'sawtooth'; o.frequency.setValueAtTime(100, t); o.frequency.linearRampToValueAtTime(30, t+0.4);
+                g.gain.setValueAtTime(0.8, t); g.gain.exponentialRampToValueAtTime(0.01, t+0.4);
+                o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.4);
+            }
+            playScore() {
+                if(!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.type = 'square'; o.frequency.setValueAtTime(600, t); o.frequency.setValueAtTime(800, t+0.05);
+                g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.01, t+0.1);
+                o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.1);
+            }
+        }
+        const sfx = new AudioSys();
+
+        imgBg.onload = resize;
+
+        function showStartScreen() {
+            gameState = 'start';
+            startScreen.style.display = 'flex';
+            gameOverScreen.style.display = 'none';
+        }
+
+        function startGame() {
+            try { new Audio('kokis.wav').play(); } catch(e) {}
+            sfx.init();
+            gameState = 'playing';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            
+            score = 0;
+            scoreText.innerText = score;
+            speedMult = 1;
+            bgX = 0;
+            obstacles = [];
+            spawnTimer = 0;
+            
+            player.y = groundY - player.height;
+            player.vy = 0;
+            player.isGrounded = true;
+            
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function spawnObstacle() {
+            let scale = Math.min(cw/800, ch/600, 1.2);
+            let boxSize = 60 * scale;
+            
+            // Randomize obstacle type: 
+            // 70% single box, 30% double stacked box
+            let isDouble = Math.random() > 0.7; 
+            let obsHeight = isDouble ? boxSize * 2 : boxSize;
+
+            obstacles.push({
+                x: cw + 100,
+                y: groundY - obsHeight + 5, // embed visually a tiny bit in ground
+                width: boxSize,
+                height: obsHeight,
+                passed: false,
+                isDouble: isDouble
+            });
+        }
+
+        function jump() {
+            if (gameState !== 'playing') return;
+            if (player.isGrounded) {
+                // Dynamically scale jump force depending on screen height
+                let scale = Math.min(ch/600, 1.5);
+                player.vy = player.jumpForce * scale; 
+                player.isGrounded = false;
+                sfx.playJump();
+            }
+        }
+
+        // Event Listeners for Controls
+        window.addEventListener('keydown', e => { 
+            if(e.code === 'Space' || e.key === 'ArrowUp') jump(); 
+        });
+        window.addEventListener('mousedown', jump);
+        window.addEventListener('touchstart', e => { 
+            // Prevent default zooming/scrolling
+            if(e.target === canvas || e.target.closest('div.pointer-events-none')) {
+                e.preventDefault(); 
+            }
+            if(gameState==='playing') jump(); 
+        }, {passive: false});
+
+        function update(dt) {
+            // Speed scaling
+            speedMult += dt * 0.015; // gradual increase in speed
+            let currentSpeed = gameSpeed * speedMult;
+            
+            // Background Scrolling (moves slower than foreground for parallax)
+            bgX -= (currentSpeed * 0.6) * dt;
+            
+            // Player Physics
+            let pScale = Math.min(ch/600, 1.5);
+            player.vy += (player.gravity * pScale) * dt;
+            player.y += player.vy * dt;
+
+            // Ground Collision
+            if (player.y + player.height >= groundY) {
+                player.y = groundY - player.height;
+                player.vy = 0;
+                player.isGrounded = true;
+            } else {
+                player.isGrounded = false;
+            }
+
+            // Object Spawning
+            spawnTimer -= currentSpeed * dt;
+            if (spawnTimer <= 0) {
+                spawnObstacle();
+                // Randomize spawn interval (gap between obstacles)
+                // At higher speeds, gap gets slightly wider in pixels to keep time gap fair
+                let baseGap = 500 * (Math.min(cw/800, 1));
+                spawnTimer = baseGap + Math.random() * 600 * speedMult; 
+            }
+
+            // Obstacles Update
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.x -= currentSpeed * dt;
+                
+                // Score increment when successfully passing
+                if (!obs.passed && obs.x + obs.width < player.x) {
+                    obs.passed = true;
+                    score += 10;
+                    scoreText.innerText = score;
+                    if(score % 100 === 0) sfx.playScore(); // milestone sound
+                }
+
+                // Hitbox Collision
+                // Tighten hitbox slightly to be forgiving
+                let pMarginX = player.width * 0.3; // 30% margin left/right
+                let pMarginY = player.height * 0.15; // 15% margin top/bottom
+                
+                let pBox = {
+                    left: player.x + pMarginX,
+                    right: player.x + player.width - pMarginX,
+                    top: player.y + pMarginY,
+                    bottom: player.y + player.height - (player.height * 0.05)
+                };
+                
+                let oMargin = obs.width * 0.15; // 15% box margin
+                let oBox = {
+                    left: obs.x + oMargin,
+                    right: obs.x + obs.width - oMargin,
+                    top: obs.y + oMargin,
+                    bottom: obs.y + obs.height
+                };
+
+                if (pBox.right > oBox.left && pBox.left < oBox.right && 
+                    pBox.bottom > oBox.top && pBox.top < oBox.bottom) {
+                    
+                    // Collision Detected
+                    sfx.playCrash();
+                    gameState = 'gameover';
+                    finalScore.innerText = score;
+                    gameOverScreen.style.display = 'flex';
+                }
+
+                // Cleanup off-screen obstacles
+                if (obs.x + obs.width < -100) {
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0,0,cw,ch);
+            
+            // Draw Scrolling Background
+            if (imgBg.complete && imgBg.naturalWidth > 0) {
+                // Scale background to fit height
+                let scaleY = ch / imgBg.naturalHeight;
+                let scaledW = imgBg.naturalWidth * scaleY;
+                
+                // Loop smoothly
+                let shift = bgX % scaledW;
+                
+                ctx.drawImage(imgBg, shift, 0, scaledW, ch);
+                ctx.drawImage(imgBg, shift + scaledW, 0, scaledW, ch);
+                if (shift + scaledW*2 < cw) {
+                     ctx.drawImage(imgBg, shift + scaledW*2, 0, scaledW, ch);
+                }
+            } else {
+                ctx.fillStyle = '#1e3a8a'; 
+                ctx.fillRect(0,0,cw,ch); 
+            }
+
+            // Draw shadow/tint floor
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(0, groundY, cw, ch - groundY);
+            
+            // Draw Player
+            if (imgPlayer.complete && imgPlayer.naturalWidth > 0) {
+                // Bobbing animation if running
+                let jumpAnim = (player.isGrounded && gameState === 'playing') ? Math.abs(Math.sin(Date.now() / 80)) * 10 : 0;
+                
+                ctx.save();
+                ctx.translate(player.x + player.width/2, player.y + player.height/2 - jumpAnim);
+                
+                // Tilt forward slightly while running, tilt back while jumping
+                if (!player.isGrounded) {
+                    ctx.rotate(-0.1);
+                } else if(gameState === 'playing') {
+                    ctx.rotate(0.05);
+                }
+                
+                ctx.drawImage(imgPlayer, -player.width/2, -player.height/2, player.width, player.height);
+                ctx.restore();
+            } else {
+                // Fallback rendering
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+
+            // Draw Obstacles
+            obstacles.forEach(obs => {
+                if (imgBox.complete && imgBox.naturalWidth > 0) {
+                    if (obs.isDouble) {
+                        // Stack two boxes
+                        ctx.drawImage(imgBox, obs.x, obs.y, obs.width, obs.width);
+                        ctx.drawImage(imgBox, obs.x, obs.y + obs.width, obs.width, obs.width);
+                    } else {
+                        // Single box
+                        ctx.drawImage(imgBox, obs.x, obs.y, obs.width, obs.height);
+                    }
+                } else {
+                    ctx.fillStyle = '#8b4513';
+                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                }
+            });
+        }
+
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            let dt = (timestamp - lastTime) / 1000;
+            if (dt > 0.1) dt = 0.1; // Cap dt for lag spikes/tab switching
+            lastTime = timestamp;
+
+            if (gameState === 'playing') {
+                update(dt);
+            }
+            draw();
+
+            if (gameState !== 'gameover' || gameOverScreen.style.display === 'none') {
+                requestAnimationFrame(gameLoop);
+            } else if (gameState === 'gameover') {
+                // Draw one last frame to freeze state
+                draw();
+            }
+        }
+
+        // Initialize display
+        resize();
+
+    </script>
+<footer style="position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-family: sans-serif; font-size: 0.8rem; color: white; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9998; pointer-events: auto;">
+    Developed by <a href="https://janiruhansaga.com/" target="_blank" style="color: #FFD700; text-decoration: none; font-weight: bold;">JAniruhansaga</a>
+</footer>
+</body>
+</html>

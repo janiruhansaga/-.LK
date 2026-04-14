@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>හතරවන අදියර - චලනය වන මුට්ටිය</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Noto Sans Sinhala', sans-serif; overflow: hidden; margin: 0;
+            background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 20%, #b45309 50%, #d97706 75%, #92400e 100%);
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><path d="M50,10 L54,14 L18,50 L14,46 Z" fill="%238b4513" stroke="%234a2e00" stroke-width="2"/><path d="M46,18 L42,14" stroke="%23654321" stroke-width="2"/><path d="M30,34 L26,30" stroke="%23654321" stroke-width="2"/></svg>') 14 46, auto !important;
+        }
+        
+        /* Overlay to fade background so pot stands out */
+        .bg-overlay { background: rgba(0, 0, 0, 0.4); position: absolute; inset:0; z-index: 1; }
+
+        #pot-container {
+            position: absolute;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: clamp(80px, 18vmin, 140px);
+            height: clamp(80px, 18vmin, 140px);
+            cursor: inherit;
+            z-index: 50;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #pot { 
+            width: 100%; height: 100%; 
+            filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); 
+            pointer-events: auto; 
+            touch-action: manipulation; 
+        }
+        
+        .hit-effect { 
+            animation: hitAnim 0.3s forwards; 
+        }
+        @keyframes hitAnim { 
+            0% { transform: scale(1); filter: brightness(1) drop-shadow(0 15px 15px rgba(0,0,0,0.6)); } 
+            50% { transform: scale(0.7) rotate(-20deg); filter: brightness(2) drop-shadow(0 0 30px #facc15); } 
+            100% { transform: scale(1); filter: brightness(1) drop-shadow(0 15px 15px rgba(0,0,0,0.6)); } 
+        }
+        
+        .timer-bar { transition: width 1s linear; }
+
+        /* The Break Effect for the final hit */
+        .break-effect {
+            animation: explode 0.6s forwards;
+            pointer-events: none;
+        }
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; filter: brightness(2) drop-shadow(0 0 40px #f59e0b); }
+            100% { transform: scale(3) rotate(45deg); opacity: 0; filter: brightness(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-overlay"></div>
+
+    <script>
+        const REQUIRED_LEVEL = 4;
+        try {
+            if(parseInt(localStorage.getItem('th_level')||'0') < REQUIRED_LEVEL) window.location.href = 'treasure-hunt';
+        } catch(e){}
+    </script>
+    
+    <!-- Top HUD -->
+    <div class="fixed top-0 left-0 right-0 p-4 md:p-6 bg-black/60 backdrop-blur-md z-20 flex justify-between items-center text-white border-b border-white/10 shadow-lg">
+        <div class="font-black text-xl md:text-2xl tracking-widest flex items-center gap-3">
+            🎯 HITS: 
+            <span id="score" class="text-orange-400 bg-black/50 px-3 py-1 rounded-lg border border-orange-500/30">0/12</span>
+        </div>
+        <div class="font-black text-xl md:text-2xl flex items-center gap-2">
+            ⏳ TIME: 
+            <span id="time" class="text-white w-10 text-right bg-black/50 px-2 py-1 rounded-lg">35</span>s
+        </div>
+    </div>
+    
+    <!-- Timer Bar -->
+    <div class="fixed top-[73px] md:top-[89px] left-0 right-0 h-1.5 bg-gray-900 z-20 shadow-md">
+        <div id="timeBar" class="h-full bg-green-500 timer-bar w-full drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]"></div>
+    </div>
+
+    <!-- Intro Text Overlay -->
+    <div id="intro" class="absolute inset-0 z-40 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center transition-opacity duration-500">
+        <div class="text-7xl mb-6 animate-bounce">🏺</div>
+        <h1 class="text-3xl md:text-5xl font-black text-orange-400 mb-6 drop-shadow-lg">වේගවත් කණ මුට්ටිය!</h1>
+        <p class="text-white text-lg md:text-2xl mb-10 max-w-lg leading-relaxed">
+            මුට්ටිය ස්ථානයෙන් ස්ථානයට පනිනු ඇත. තත්පර 35 ක් ඇතුළත වාර <b>12 ක්</b> ඉක්මනින් එයට පහර දෙන්න!
+        </p>
+        <button onclick="startGame()" class="bg-gradient-to-r from-orange-600 to-red-600 hover:scale-105 transition-transform text-white font-black py-4 px-12 rounded-full text-2xl shadow-[0_0_30px_rgba(234,88,12,0.6)] border-2 border-orange-400">
+            ක්‍රීඩාව අරඹන්න 💥
+        </button>
+    </div>
+
+    <!-- The Target Container -->
+    <div id="pot-container" style="top: 50%; left: 50%; transform: translate(-50%, -50%); display: none;">
+        <img id="pot" src="mutti.png" alt="Kana Mutti" draggable="false">
+    </div>
+
+    <!-- Celebration Screen -->
+    <div id="final-reward" class="hidden flex-col items-center justify-center absolute inset-0 z-50 bg-black/95 backdrop-blur-xl p-6 text-center">
+        <!-- Magic glow effect -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] max-w-[500px] max-h-[500px] bg-gradient-to-tr from-yellow-500/40 to-orange-400/40 rounded-full blur-[80px] animate-pulse"></div>
+        
+        <h2 class="text-5xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-orange-500 mb-12 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] relative z-10 p-2">
+            විශිෂ්ඨයි! 🎉
+        </h2>
+        
+        <button onclick="claimTreasure()" class="bg-gradient-to-r relative z-10 from-yellow-500 to-orange-600 text-black font-black py-5 px-12 rounded-2xl text-2xl md:text-3xl shadow-[0_0_40px_rgba(250,204,21,0.6)] hover:scale-105 transition-all uppercase tracking-widest border-2 border-yellow-300">
+            අමුත්තා බලන්න 💰
+        </button>
+    </div>
+
+    <!-- Time Up Screen -->
+    <div id="game-over" class="hidden flex-col items-center justify-center absolute inset-0 z-50 bg-red-950/95 p-6 text-center backdrop-blur-lg">
+        <h2 class="text-5xl md:text-8xl font-black text-red-500 mb-8 drop-shadow-lg p-2">කාලය අවසන්!</h2>
+        <p class="text-white text-lg md:text-xl mb-10">ඔබ මුට්ටියට පහර දුන්නේ <span id="fail-score" class="text-orange-400 font-bold text-2xl md:text-3xl">0</span> වරක් පමණි.</p>
+        <button onclick="location.reload()" class="bg-black text-white font-bold py-4 px-10 rounded-full text-lg md:text-xl shadow-2xl border-2 border-red-500 hover:bg-red-900 transition-colors uppercase tracking-widest">
+            නැවත උත්සහ කරන්න ↓
+        </button>
+    </div>
+
+    <script>
+        let score = 0;
+        let timeLeft = 35;
+        const targetHits = 12;
+        let gameActive = false;
+        let moveInterval, timerInterval;
+
+        const potContainer = document.getElementById('pot-container');
+        const pot = document.getElementById('pot');
+        const scoreEl = document.getElementById('score');
+        const timeEl = document.getElementById('time');
+        const timeBar = document.getElementById('timeBar');
+        const introPanel = document.getElementById('intro');
+
+        // Play area constraints (uses clamp pot size: half of pot width)
+        const POT_HALF = () => Math.min(Math.max(window.innerWidth, window.innerHeight) * 0.09, 70);
+        const PADDING_TOP = () => Math.max(90, window.innerHeight * 0.14) + POT_HALF();    // HUD + pot half
+        const PADDING_BOTTOM = () => 20 + POT_HALF();
+        const PADDING_X = () => 20 + POT_HALF();
+
+        function movePot() {
+            if(!gameActive) return;
+            
+            const padX = PADDING_X(), padTop = PADDING_TOP(), padBot = PADDING_BOTTOM();
+            const w = window.innerWidth - padX * 2;
+            const h = window.innerHeight - padTop - padBot;
+            
+            const x = padX + Math.floor(Math.random() * w);
+            const y = padTop + Math.floor(Math.random() * h);
+            
+            const flip = Math.random() > 0.5 ? 'scaleX(-1)' : 'scaleX(1)';
+            const rot = `rotate(${Math.floor(Math.random() * 60 - 30)}deg)`;
+            
+            potContainer.style.left = `${x}px`;
+            potContainer.style.top = `${y}px`;
+            potContainer.style.transform = `translate(-50%, -50%) ${flip} ${rot}`;
+        }
+
+        // Mouse and Touch handlers for the pot
+        pot.addEventListener('mousedown', hitPot);
+        pot.addEventListener('touchstart', (e) => { 
+            e.preventDefault(); // Prevents double firing with mouse events on mobile
+            hitPot(); 
+        }, {passive: false});
+
+        function hitPot() {
+            if(!gameActive) return;
+            
+            score++;
+            scoreEl.innerText = `${score}/${targetHits}`;
+            
+            // Visual hit feedback
+            pot.classList.remove('hit-effect');
+            void pot.offsetWidth; // Reflow
+            pot.classList.add('hit-effect');
+            
+            // Immediately change position upon hit to increase difficulty
+            movePot();
+            
+            if (score >= targetHits) {
+                winGame();
+            }
+        }
+
+        function winGame() {
+            gameActive = false;
+            clearInterval(moveInterval);
+            clearInterval(timerInterval);
+            
+            // Dramatic shatter animation
+            pot.classList.remove('hit-effect');
+            pot.classList.add('break-effect');
+            
+            setTimeout(() => {
+                potContainer.style.display = 'none';
+                try { localStorage.setItem('th_level', '5'); } catch(e){} // Unlock Final
+                try { new Audio('cele.mp3').play(); } catch(e) {}
+                document.getElementById('final-reward').classList.remove('hidden');
+                document.getElementById('final-reward').style.display = 'flex';
+            }, 600);
+        }
+
+        function loseGame() {
+            gameActive = false;
+            clearInterval(moveInterval);
+            clearInterval(timerInterval);
+            potContainer.style.display = 'none';
+            document.getElementById('fail-score').innerText = score;
+            document.getElementById('game-over').classList.remove('hidden');
+            document.getElementById('game-over').style.display = 'flex';
+        }
+
+        function updateTimer() {
+            if(!gameActive) return;
+            timeLeft--;
+            timeEl.innerText = timeLeft;
+            
+            const percentage = (timeLeft / 35) * 100;
+            timeBar.style.width = `${percentage}%`;
+            
+            // Color shifts as time passes
+            if(timeLeft === 15) {
+                timeBar.classList.replace('bg-green-500', 'bg-yellow-500');
+                timeBar.style.filter = "drop-shadow(0 0 8px rgba(234,179,8,0.8))";
+            }
+            if (timeLeft <= 5) {
+                timeBar.classList.replace('bg-yellow-500', 'bg-red-500');
+                timeBar.classList.add('animate-pulse');
+                timeBar.style.filter = "drop-shadow(0 0 10px rgba(239,68,68,1))";
+                timeEl.parentElement.classList.add('text-red-400', 'animate-pulse');
+            }
+            
+            if (timeLeft <= 0) {
+                loseGame();
+            }
+        }
+
+        function startGame() {
+            introPanel.style.opacity = '0';
+            setTimeout(() => {
+                introPanel.style.display = 'none';
+                potContainer.style.display = 'block';
+                gameActive = true;
+                
+                // Position jumps automatically every 1200ms to force player speed
+                moveInterval = setInterval(movePot, 1200); 
+                timerInterval = setInterval(updateTimer, 1000); 
+                
+                movePot(); // initial place
+            }, 500);
+        }
+
+        function claimTreasure() {
+            window.location.href = 'sangawunu-amutha';
+        }
+    </script>
+<footer style="position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-family: sans-serif; font-size: 0.8rem; color: white; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9998; pointer-events: auto;">
+    Developed by <a href="https://janiruhansaga.com/" target="_blank" style="color: #FFD700; text-decoration: none; font-weight: bold;">JAniruhansaga</a>
+</footer>
+</body>
+</html>

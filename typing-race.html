@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>අවුරුදු රේස් - Avurudu Race</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Noto Sans Sinhala', sans-serif;
+        }
+        canvas { display: block; touch-action: none; }
+
+        .screen {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center; padding: 24px;
+            z-index: 50;
+        }
+        #start-screen { background: linear-gradient(160deg, #1a0800 0%, #3b1800 50%, #1a0800 100%); }
+        #result-screen { background: rgba(0,0,0,0.96); backdrop-filter: blur(20px); display:none; }
+
+        .screen-title {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(2rem,6vw,4rem);
+            color: #FFD700;
+            text-shadow: 0 0 30px #FFD700, 0 0 60px rgba(255,215,0,0.4);
+            margin-bottom: 6px;
+        }
+        .screen-si { font-size: clamp(1.4rem,3.5vw,2.2rem); color:#fff; margin-bottom:24px; }
+
+        .controls-box {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,215,0,0.25);
+            border-radius: 16px;
+            padding: 20px 32px;
+            margin-bottom: 28px;
+            max-width: 420px;
+            text-align: left;
+        }
+        .controls-box h3 { color:#FFD700; font-size:0.9rem; letter-spacing:2px; margin-bottom:12px; font-family:'Orbitron',monospace; }
+        .ctrl-row { display:flex; align-items:center; gap:12px; margin:8px 0; color:#cbd5e1; font-size:0.95rem; }
+        .key {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #FFD700;
+            min-width: 36px;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #b45309, #d97706);
+            color: #fff; border: 2px solid #FFD700;
+            padding: 14px 44px; border-radius: 50px;
+            font-size: 1.2rem; font-weight: 900; cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            box-shadow: 0 0 25px rgba(255,215,0,0.45);
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 6px;
+        }
+        .btn:hover { transform: scale(1.06); box-shadow: 0 0 40px rgba(255,215,0,0.7); }
+        .btn.sec {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.3);
+            box-shadow: none;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .stat-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 14px; margin: 20px 0;
+            width: 100%; max-width: 320px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 12px; padding: 14px;
+        }
+        .stat-card .val { font-family:'Orbitron',monospace; font-size:2rem; color:#FFD700; }
+        .stat-card .lbl { font-size:0.7rem; color:#94a3b8; margin-top:4px; }
+
+        /* HUD */
+        #hud {
+            position: fixed; top:0; left:0; right:0;
+            display: none;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,215,0,0.3);
+            z-index: 10;
+            align-items: center;
+            gap: 20px;
+        }
+        .hud-item { font-family:'Orbitron',monospace; font-size:0.8rem; color:#FFD700; }
+        .hud-item span { color:#fff; display:block; font-size:1.1rem; }
+        #progress-track {
+            flex:1; height:10px;
+            background: rgba(255,255,255,0.1);
+            border-radius:8px; overflow:hidden;
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+        #progress-fill {
+            height:100%;
+            background: linear-gradient(90deg, #b45309, #FFD700);
+            border-radius:8px; width:0%;
+            transition: width 0.2s;
+            box-shadow: 0 0 8px #FFD700;
+        }
+
+        /* HUD mobile */
+        @media (max-width: 600px) {
+            #hud { padding: 8px 14px; gap: 10px; }
+            .hud-item { font-size: 0.65rem; }
+            .hud-item span { font-size: 0.9rem; }
+        }
+
+        /* Mobile touch controls */
+        #touch-controls {
+            position: fixed; bottom: 24px; left:0; right:0;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            z-index: 20;
+        }
+        .touch-btn {
+            width: clamp(64px, 16vw, 88px);
+            height: clamp(64px, 16vw, 88px);
+            background: rgba(255,215,0,0.18);
+            border: 2px solid rgba(255,215,0,0.55);
+            border-radius: 50%;
+            display: flex; align-items:center; justify-content:center;
+            font-size: clamp(1.4rem, 5vw, 2rem);
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        .touch-btn:active { background: rgba(255,215,0,0.35); transform: scale(0.93); }
+        .touch-center { display:flex; gap:14px; }
+    </style>
+<body>
+    <a href="index" style="position: fixed; top: 16px; left: 16px; z-index: 9999; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,215,0,0.4); color: #FFD700; padding: 8px 16px; border-radius: 50px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.6); font-family: sans-serif; cursor: pointer; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,215,0,0.2)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'">
+        ◀ මෙනුව
+    </a>
+
+<!-- START SCREEN -->
+<div class="screen" id="start-screen">
+    <div style="font-size:4rem;margin-bottom:8px;">🚴🏆</div>
+    <div class="screen-title">AVURUDU RACE</div>
+    <div class="screen-si">අවුරුදු රේස් !</div>
+    <div class="controls-box" id="controls-hint">
+        <h3>CONTROLS</h3>
+        <div class="ctrl-row"><span class="key">↑</span><span class="key">W</span> ත්වරණය / Accelerate</div>
+        <div class="ctrl-row"><span class="key">↓</span><span class="key">S</span> බ්‍රේක් / Brake</div>
+        <div class="ctrl-row"><span class="key">←</span><span class="key">A</span> වමට / Steer Left</div>
+        <div class="ctrl-row"><span class="key">→</span><span class="key">D</span> දකුණට / Steer Right</div>
+        <div id="mobile-ctrl-hint" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,215,0,0.2);">
+            <div class="ctrl-row" style="justify-content:center; color:#FFD700;">📱 Touch controls visible during race</div>
+        </div>
+    </div>
+    <button class="btn" onclick="startGame()">🚀 ආරම්භ කරන්න</button>
+    <a href="index" class="btn sec" style="color:#fff;">◀ මෙනුව</a>
+</div>
+
+<!-- RESULT SCREEN -->
+<div class="screen" id="result-screen">
+    <div id="res-emoji" style="font-size:5rem;"></div>
+    <div class="screen-title" id="res-title"></div>
+    <div class="screen-si" id="res-sub"></div>
+    <div class="stat-grid">
+        <div class="stat-card"><div class="val" id="s-pos">1st</div><div class="lbl">Position</div></div>
+        <div class="stat-card"><div class="val" id="s-time">0s</div><div class="lbl">ගත වූ කාලය</div></div>
+        <div class="stat-card"><div class="val" id="s-speed">0</div><div class="lbl">ඉහළම වේගය km/h</div></div>
+        <div class="stat-card"><div class="val" id="s-laps">1</div><div class="lbl">Laps</div></div>
+    </div>
+    <button class="btn" onclick="startGame()">🔄 නැවත ගෙල්ල</button>
+    <a href="index" class="btn sec" style="color:#fff;">◀ මෙනුව</a>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+    <div class="hud-item">SPEED<span id="hud-speed">0</span></div>
+    <div style="flex:1; display:flex; gap:8px; align-items:center;">
+        <span style="font-size:1.2rem;">🚴</span>
+        <div id="progress-track"><div id="progress-fill"></div></div>
+        <span style="font-size:1.2rem;">🏁</span>
+    </div>
+    <div class="hud-item">LAP<span id="hud-lap">1/3</span></div>
+    <div class="hud-item">POS<span id="hud-pos">1st</span></div>
+    <div class="hud-item">TIME<span id="hud-time">0:00</span></div>
+</div>
+
+<!-- CANVAS -->
+<canvas id="c"></canvas>
+
+<!-- TOUCH CONTROLS -->
+<div id="touch-controls">
+    <div class="touch-btn" id="tc-left" ontouchstart="keys.left=true" ontouchend="keys.left=false">◀</div>
+    <div class="touch-center">
+        <div class="touch-btn" id="tc-accel" ontouchstart="keys.up=true" ontouchend="keys.up=false">▲</div>
+        <div class="touch-btn" id="tc-brake" ontouchstart="keys.down=true" ontouchend="keys.down=false">▼</div>
+    </div>
+    <div class="touch-btn" id="tc-right" ontouchstart="keys.right=true" ontouchend="keys.right=false">▶</div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+// ---- SIZE ----
+let CW, CH, HUD_H = 52;
+function resize() {
+    CW = canvas.width  = window.innerWidth;
+    CH = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', () => { resize(); });
+resize();
+
+// Show mobile hint on start screen
+if ('ontouchstart' in window) {
+    const hint = document.getElementById('mobile-ctrl-hint');
+    if (hint) hint.style.display = 'block';
+}
+
+// ---- ROAD CONFIG ----
+const ROAD_W = 340;   // px road width in world space
+const LANE_W = ROAD_W / 3;
+const TOTAL_DIST = 6000; // world units per lap
+const LAPS = 3;
+const CAM_Y_RATIO = 0.68; // player sits here on screen
+
+// ---- INPUT ----
+const keys = { up:false, down:false, left:false, right:false };
+document.addEventListener('keydown', e => {
+    if(e.key==='ArrowUp'||e.key==='w'||e.key==='W')    { keys.up=true;    e.preventDefault(); }
+    if(e.key==='ArrowDown'||e.key==='s'||e.key==='S')  { keys.down=true;  e.preventDefault(); }
+    if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')  { keys.left=true;  e.preventDefault(); }
+    if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') { keys.right=true; e.preventDefault(); }
+});
+document.addEventListener('keyup', e => {
+    if(e.key==='ArrowUp'||e.key==='w'||e.key==='W')    keys.up=false;
+    if(e.key==='ArrowDown'||e.key==='s'||e.key==='S')  keys.down=false;
+    if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')  keys.left=false;
+    if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') keys.right=false;
+});
+
+// ---- MUSIC ----
+const bgMusic = new Audio('raban si.mp3');
+bgMusic.loop = true; bgMusic.volume = 0.5;
+
+// ---- GAME STATE ----
+let gameState = 'idle';  // idle | countdown | playing | done
+let countdown = 3;
+let countdownTimer = 0;
+let startTime = 0;
+let elapsedMs = 0;
+let finishOrder = [];
+let winEffect = null;
+
+// ---- PLAYER ----
+let player;
+function makePlayer() {
+    return {
+        x: 0,        // world x (road centre = 0)
+        dist: 0,     // world distance travelled (wraps per lap)
+        totalDist: 0,
+        lap: 1,
+        speed: 0,
+        maxSpeed: 8,
+        accel: 0.18,
+        brake: 0.28,
+        friction: 0.95,
+        steer: 0,
+        maxSteer: 3.8,
+        steerFriction: 0.82,
+        angle: 0,     // visual lean angle
+        topSpeed: 0,
+        color: '#FFD700',
+        finished: false,
+        isPlayer: true,
+        name: 'ඔබ'
+    };
+}
+
+// ---- AI ----
+let aiCars = [];
+function makeAI(color, baseSpeed, startX, name) {
+    return {
+        x: startX,
+        dist: 0,
+        totalDist: 0,
+        lap: 1,
+        speed: 0,
+        maxSpeed: baseSpeed,
+        accel: 0.14,
+        brake: 0.2,
+        friction: 0.95,
+        steer: 0,
+        angle: 0,
+        color,
+        finished: false,
+        isPlayer: false,
+        name,
+        targetX: startX,
+        changeTimer: 0
+    };
+}
+
+// ---- WORLD PROPS (trees, etc.) ----
+let worldProps = [];
+function generateProps() {
+    worldProps = [];
+    for (let i = 0; i < 60; i++) {
+        const side = Math.random() > 0.5 ? 'L' : 'R';
+        worldProps.push({
+            dist: Math.random() * TOTAL_DIST,
+            side,
+            offX: 20 + Math.random() * 120,
+            r: 14 + Math.random() * 14,
+            hue: 100 + Math.random() * 50,
+            type: Math.random() > 0.3 ? 'tree' : 'pot'
+        });
+    }
+}
+
+// ---- ROAD STRIPES (world-space) ----
+const STRIPE_EVERY = 80;
+
+// ---- PARTICLES ----
+let particles = [];
+function addDust(x, y) {
+    for (let i=0;i<3;i++) particles.push({
+        x, y,
+        vx:(Math.random()-0.5)*2,
+        vy:Math.random()*-2,
+        life:1, r:4+Math.random()*4,
+        color:'rgba(180,140,80,'
+    });
+}
+
+// ---- DRAWING HELPERS ----
+const roadL = () => (CW - ROAD_W) / 2;
+const roadR = () => (CW + ROAD_W) / 2;
+
+function worldToScreen(worldDist, camDist) {
+    // Simple pseudo-3D: further = higher on screen (smaller y)
+    const delta = worldDist - camDist;
+    const screenY = CH * CAM_Y_RATIO - delta * 0.9;
+    return screenY;
+}
+
+function drawRoad(camDist) {
+    // Grass
+    ctx.fillStyle = '#4a7c35';
+    ctx.fillRect(0, HUD_H, CW, CH - HUD_H);
+
+    // Grass texture strips
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    for (let gx = 0; gx < CW; gx += 22) {
+        ctx.fillRect(gx, HUD_H, 2, CH - HUD_H);
+    }
+
+    // Road
+    const rl = roadL(), rr = roadR();
+    const grad = ctx.createLinearGradient(rl, 0, rr, 0);
+    grad.addColorStop(0,   '#7a5430');
+    grad.addColorStop(0.15,'#9a6840');
+    grad.addColorStop(0.5, '#b07848');
+    grad.addColorStop(0.85,'#9a6840');
+    grad.addColorStop(1,   '#7a5430');
+    ctx.fillStyle = grad;
+    ctx.fillRect(rl, HUD_H, ROAD_W, CH - HUD_H);
+
+    // Edge stripes
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(rl,HUD_H); ctx.lineTo(rl,CH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(rr,HUD_H); ctx.lineTo(rr,CH); ctx.stroke();
+
+    // Centre stripe (scrolling)
+    const cx = CW / 2;
+    const offset = (camDist % STRIPE_EVERY);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([40, 40]);
+    ctx.lineDashOffset = offset;
+    ctx.beginPath(); ctx.moveTo(cx, HUD_H); ctx.lineTo(cx, CH); ctx.stroke();
+
+    // Lane dividers
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 2;
+    ctx.lineDashOffset = offset;
+    for (let l=1;l<3;l++) {
+        const lx = rl + l * LANE_W;
+        if (Math.abs(lx - cx) < 5) continue;
+        ctx.beginPath(); ctx.moveTo(lx,HUD_H); ctx.lineTo(lx,CH); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+}
+
+function drawProps(camDist) {
+    const rl = roadL(), rr = roadR();
+    worldProps.forEach(p => {
+        // Handle dist wrapping: get closest equivalent dist
+        let d = p.dist;
+        const diff = ((d - camDist) % TOTAL_DIST + TOTAL_DIST) % TOTAL_DIST;
+        const adjustedDiff = diff > TOTAL_DIST / 2 ? diff - TOTAL_DIST : diff;
+
+        const sy = CH * CAM_Y_RATIO - adjustedDiff * 0.9;
+        if (sy < HUD_H - 60 || sy > CH + 60) return;
+
+        const baseX = p.side === 'L' ? rl - p.offX : rr + p.offX;
+
+        if (p.type === 'tree') {
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.ellipse(baseX+5, sy+p.r*0.5, p.r*0.7, p.r*0.2, 0, 0, Math.PI*2);
+            ctx.fill();
+            // Trunk
+            ctx.fillStyle = '#5c3a1e';
+            ctx.fillRect(baseX-4, sy-p.r*0.3, 8, p.r*0.7);
+            // Canopy
+            ctx.fillStyle = `hsl(${p.hue},55%,22%)`;
+            ctx.beginPath(); ctx.arc(baseX,sy-p.r*0.3,p.r,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle = `hsl(${p.hue},55%,32%)`;
+            ctx.beginPath(); ctx.arc(baseX-p.r*0.2,sy-p.r*0.6,p.r*0.75,0,Math.PI*2); ctx.fill();
+        } else {
+            // Clay pot
+            ctx.fillStyle = '#c2714f';
+            ctx.beginPath();
+            ctx.arc(baseX, sy, 10, 0, Math.PI*2);
+            ctx.fill();
+            ctx.strokeStyle = '#7c3a1e';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    });
+}
+
+function drawFinishLine(camDist) {
+    const finishDist = TOTAL_DIST * LAPS - camDist;
+    const perLapDist = TOTAL_DIST - (camDist % TOTAL_DIST);
+    // Draw finish line when near (within 300 units of each lap)
+    for (let lap = player.lap; lap <= LAPS; lap++) {
+        const lapFinish = TOTAL_DIST * (lap - (player.lap - 1)) - (camDist % TOTAL_DIST);
+        const sy = CH * CAM_Y_RATIO - lapFinish * 0.9;
+        if (sy < HUD_H - 20 || sy > CH + 20) continue;
+
+        const rl = roadL(), rr = roadR(), rw = ROAD_W;
+        const cellW = rw / 14;
+        for (let col = 0; col < 14; col++) {
+            for (let row = 0; row < 2; row++) {
+                ctx.fillStyle = (col+row)%2===0 ? '#fff' : '#000';
+                ctx.fillRect(rl + col*cellW, sy-8+row*8, cellW, 8);
+            }
+        }
+
+        // Flags
+        const flagH = 28;
+        [[rl, '#ef4444'],[rr,'#ef4444']].forEach(([fx, fc]) => {
+            ctx.strokeStyle = '#555'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(fx, sy-flagH); ctx.lineTo(fx, sy+10); ctx.stroke();
+            ctx.fillStyle = fc;
+            ctx.beginPath();
+            ctx.moveTo(fx, sy-flagH);
+            ctx.lineTo(fx+22, sy-flagH+8);
+            ctx.lineTo(fx, sy-flagH+16);
+            ctx.fill();
+        });
+    }
+}
+
+function drawBike(screenX, screenY, color, angle, speed, isPlayer) {
+    ctx.save();
+    ctx.translate(screenX, screenY);
+    const lean = angle * 0.3;
+    ctx.rotate(lean);
+    const s = isPlayer ? 1.1 : 0.95;
+    ctx.scale(s, s);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(3, 24, 20, 6, lean, 0, Math.PI*2);
+    ctx.fill();
+
+    // Rear wheel
+    ctx.fillStyle = '#1e1e1e'; ctx.strokeStyle = '#444'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(-14, 14, 11, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='#888'; ctx.lineWidth=1.5;
+    for(let i=0;i<6;i++){const a=i*Math.PI/3+Date.now()*0.005*Math.min(speed,1);
+        ctx.beginPath();ctx.moveTo(-14+Math.cos(a)*11,14+Math.sin(a)*11);
+        ctx.lineTo(-14-Math.cos(a)*11,14-Math.sin(a)*11);ctx.stroke();}
+
+    // Front wheel
+    ctx.fillStyle='#1e1e1e'; ctx.strokeStyle='#444'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(14,14,11,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='#888'; ctx.lineWidth=1.5;
+    for(let i=0;i<6;i++){const a=i*Math.PI/3+Date.now()*0.005*Math.min(speed,1);
+        ctx.beginPath();ctx.moveTo(14+Math.cos(a)*11,14+Math.sin(a)*11);
+        ctx.lineTo(14-Math.cos(a)*11,14-Math.sin(a)*11);ctx.stroke();}
+
+    // Frame
+    ctx.strokeStyle = color; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    const paths = [[-14,14,0,-2],[0,-2,14,14],[0,-2,-2,-14],[-2,-14,14,14],[-2,-14,14,-8]];
+    paths.forEach(([x1,y1,x2,y2])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();});
+
+    // Handlebar
+    ctx.strokeStyle='#aaa'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(14,-8); ctx.lineTo(18,-14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(18,-14); ctx.lineTo(14,-18); ctx.lineTo(22,-18); ctx.stroke();
+
+    // Seat
+    ctx.fillStyle='#111';
+    ctx.beginPath(); ctx.ellipse(-2,-17,8,3,-0.2,0,Math.PI*2); ctx.fill();
+
+    // Rider head
+    const rg = ctx.createRadialGradient(0,-8,2,0,-8,10);
+    rg.addColorStop(0,'#fcd34d'); rg.addColorStop(1,'#92400e');
+    ctx.fillStyle=rg;
+    ctx.beginPath(); ctx.arc(0,-8,9,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.lineWidth=2; ctx.stroke();
+
+    // Speed trail
+    if (speed > 2) {
+        ctx.strokeStyle = `rgba(255,215,0,${Math.min(0.5, speed*0.06)})`;
+        ctx.lineWidth = 2; ctx.setLineDash([4,6]);
+        ctx.beginPath(); ctx.moveTo(-10,22); ctx.lineTo(-10,22+speed*5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(10,22);  ctx.lineTo(10,22+speed*5);  ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    ctx.restore();
+}
+
+function drawParticles() {
+    for (let i = particles.length-1; i>=0; i--) {
+        const p = particles[i];
+        p.x+=p.vx; p.y+=p.vy; p.vy+=0.1; p.life-=0.04;
+        if(p.life<=0){particles.splice(i,1);continue;}
+        ctx.globalAlpha=p.life;
+        ctx.fillStyle=p.color+p.life+')';
+        ctx.beginPath();ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=1;
+    }
+}
+
+function drawCountdown() {
+    ctx.fillStyle='rgba(0,0,0,0.5)';
+    ctx.fillRect(0,0,CW,CH);
+    ctx.textAlign='center';
+    ctx.font=`bold ${Math.round(CH*0.2)}px Orbitron,monospace`;
+    ctx.fillStyle='#FFD700';
+    ctx.shadowColor='#FFD700'; ctx.shadowBlur=40;
+    ctx.fillText(countdown > 0 ? countdown : 'GO!', CW/2, CH/2+40);
+    ctx.shadowBlur=0;
+
+    ctx.font=`bold 24px 'Noto Sans Sinhala',sans-serif`;
+    ctx.fillStyle='#fff';
+    ctx.fillText('AI රථිකරුවන් 6 දෙනා ඔබේ ජය ගනිති — ප්‍රවේශම් වෙන්න!', CW/2, CH*0.2);
+}
+
+// ---- OBSTACLES ----
+let obstacles = [];
+let hitFlash = 0;  // frames of red flash
+
+function generateObstacles() {
+    obstacles = [];
+    const count = 30; // obstacles per lap
+    for (let lap = 0; lap < LAPS; lap++) {
+        for (let i = 0; i < count; i++) {
+            const d = 300 + (i / count) * (TOTAL_DIST - 600);
+            obstacles.push({
+                dist: lap * TOTAL_DIST + d,
+                x: (Math.random() - 0.5) * (ROAD_W - 60),
+                r: 14 + Math.random() * 8,
+                type: Math.random() > 0.5 ? 'rock' : 'pot',
+                color: Math.random() > 0.5 ? '#c2714f' : '#777'
+            });
+        }
+    }
+}
+
+function drawObstacles(camDist) {
+    obstacles.forEach(ob => {
+        const lapsDone = Math.floor(camDist / TOTAL_DIST);
+        // Compute obstacle dist relative to camera
+        const totalObDist = ob.dist;
+        const diff = totalObDist - (camDist + lapsDone * 0);
+        const absDiff = totalObDist - camDist;
+        const sy = CH * CAM_Y_RATIO - absDiff * 0.9;
+        if (sy < HUD_H - 40 || sy > CH + 40) return;
+        const sx = CW / 2 + ob.x;
+
+        if (ob.type === 'rock') {
+            ctx.fillStyle = '#888';
+            ctx.beginPath();
+            ctx.ellipse(sx, sy, ob.r, ob.r*0.7, 0.3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#aaa';
+            ctx.beginPath();
+            ctx.ellipse(sx-ob.r*0.2, sy-ob.r*0.2, ob.r*0.4, ob.r*0.3, 0.3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.strokeStyle='#555'; ctx.lineWidth=1;
+            ctx.beginPath(); ctx.ellipse(sx,sy,ob.r,ob.r*0.7,0.3,0,Math.PI*2); ctx.stroke();
+        } else {
+            // Clay pot
+            ctx.fillStyle='#c2714f';
+            ctx.beginPath(); ctx.arc(sx,sy,ob.r,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle='#e08060';
+            ctx.beginPath(); ctx.arc(sx-ob.r*0.3,sy-ob.r*0.3,ob.r*0.35,0,Math.PI*2); ctx.fill();
+            ctx.strokeStyle='#7c3a1e'; ctx.lineWidth=2;
+            ctx.beginPath(); ctx.arc(sx,sy,ob.r,0,Math.PI*2); ctx.stroke();
+            // pot neck
+            ctx.fillStyle='#9a4a2a';
+            ctx.fillRect(sx-ob.r*0.35, sy-ob.r-4, ob.r*0.7, 6);
+        }
+    });
+}
+
+function checkObstacleCollision() {
+    const px = player.x;
+    const pd = player.totalDist;
+    const PLAYER_R = 18;
+
+    for (let ob of obstacles) {
+        const ddist = Math.abs(ob.dist - pd);
+        if (ddist > 40) continue;
+        const dx = Math.abs(ob.x - px);
+        if (dx < ob.r + PLAYER_R) {
+            // HIT!
+            player.speed = Math.max(0, player.speed - 3.5);
+            player.dist = Math.max(0, player.dist - 30);
+            player.totalDist = Math.max(0, player.totalDist - 30);
+            hitFlash = 12;
+            // Bounce sideways
+            player.x += (px > ob.x ? 1 : -1) * 15;
+            // Explosion particles
+            const sx = CW/2 + px, sy = CH * CAM_Y_RATIO;
+            for(let i=0;i<12;i++) particles.push({
+                x:sx, y:sy,
+                vx:(Math.random()-0.5)*10,
+                vy:(Math.random()-0.5)*10-3,
+                life:1, r:5+Math.random()*5,
+                color:'rgba(255,80,0,'
+            });
+            try { new Audio('').play(); } catch(e){}
+            break;
+        }
+    }
+}
+
+// ---- UPDATE ----
+function updatePlayer(dt) {
+    if (player.finished) return;
+    const p = player;
+
+    if (keys.up)   p.speed += p.accel;
+    if (keys.down) p.speed -= p.brake;
+    if (!keys.up && !keys.down) p.speed *= p.friction;
+
+    p.speed = Math.max(0, Math.min(p.maxSpeed, p.speed));
+    p.topSpeed = Math.max(p.topSpeed, p.speed);
+
+    if (keys.left)  p.steer -= 0.4;
+    if (keys.right) p.steer += 0.4;
+    p.steer *= p.steerFriction;
+    p.steer = Math.max(-p.maxSteer, Math.min(p.maxSteer, p.steer));
+
+    p.angle += (p.steer - p.angle) * 0.2;
+
+    const rl = -ROAD_W/2 + 20, rr = ROAD_W/2 - 20;
+    p.x += p.steer * (p.speed / p.maxSpeed);
+    p.x = Math.max(rl, Math.min(rr, p.x));
+
+    // Grass slowdown
+    const onRoad = Math.abs(p.x) < ROAD_W/2;
+    if (!onRoad) p.speed *= 0.82;
+
+    p.dist += p.speed;
+    p.totalDist += p.speed;
+
+    // Check obstacle collision
+    checkObstacleCollision();
+    if (hitFlash > 0) hitFlash--;
+
+    // Dust on grass
+    if (!onRoad && p.speed > 1) {
+        addDust(CW/2 + p.x, CH * CAM_Y_RATIO);
+    }
+
+    // Lap check
+    if (p.dist >= TOTAL_DIST) {
+        p.dist -= TOTAL_DIST;
+        p.lap++;
+        if (p.lap > LAPS) {
+            p.finished = true;
+            finishOrder.push(p);
+            endRace();
+        }
+    }
+}
+
+function updateAI(a, dt) {
+    if (a.finished) return;
+
+    // Simple AI: slightly randomise target lane
+    a.changeTimer -= dt;
+    if (a.changeTimer <= 0) {
+        a.targetX = (Math.random()-0.5) * (ROAD_W - 60);
+        a.changeTimer = 1500 + Math.random()*2000;
+    }
+
+    // Steer towards target
+    const dx = a.targetX - a.x;
+    a.steer += Math.sign(dx) * 0.15;
+    a.steer *= 0.8;
+    a.steer = Math.max(-2.5, Math.min(2.5, a.steer));
+    a.x += a.steer;
+    a.x = Math.max(-ROAD_W/2+20, Math.min(ROAD_W/2-20, a.x));
+    a.angle += (a.steer - a.angle)*0.2;
+
+    // Speed with slight variation
+    const targetSpeed = a.maxSpeed * (0.85 + Math.random()*0.15);
+    a.speed += (targetSpeed - a.speed) * 0.05;
+
+    a.dist += a.speed;
+    a.totalDist += a.speed;
+
+    if (a.dist >= TOTAL_DIST) {
+        a.dist -= TOTAL_DIST;
+        a.lap++;
+        if (a.lap > LAPS) {
+            a.finished = true;
+            if (!finishOrder.includes(a)) finishOrder.push(a);
+            if (!player.finished) endRace();
+        }
+    }
+}
+
+function getPosition() {
+    const all = [player, ...aiCars].filter(v => !v.finished);
+    all.sort((a,b) => (b.lap*TOTAL_DIST+b.dist) - (a.lap*TOTAL_DIST+a.dist));
+    const idx = all.indexOf(player);
+    return idx === -1 ? finishOrder.indexOf(player)+1 : idx+1;
+}
+
+function ordinal(n) {
+    const s=['th','st','nd','rd'];
+    const v=n%100;
+    return n+(s[(v-20)%10]||s[v]||s[0]);
+}
+
+// ---- HUD UPDATE ----
+function updateHUD() {
+    const speedKmh = Math.round(player.speed * 15);
+    document.getElementById('hud-speed').textContent = speedKmh + ' km/h';
+    document.getElementById('hud-lap').textContent = `${Math.min(player.lap,LAPS)}/${LAPS}`;
+    document.getElementById('hud-pos').textContent = ordinal(getPosition());
+
+    const progress = Math.min(1,
+        ((player.lap - 1) * TOTAL_DIST + player.dist) / (TOTAL_DIST * LAPS));
+    document.getElementById('progress-fill').style.width = (progress*100) + '%';
+
+    const ms = Date.now() - startTime;
+    const s = Math.floor(ms/1000), m = Math.floor(s/60);
+    document.getElementById('hud-time').textContent = `${m}:${String(s%60).padStart(2,'0')}`;
+}
+
+// ---- MAIN LOOP ----
+let lastTime = 0;
+function loop(ts) {
+    if (gameState === 'idle') return;
+
+    ctx.clearRect(0,0,CW,CH);
+    const dt = ts - lastTime; lastTime = ts;
+
+    const camDist = player.dist;
+
+    drawRoad(camDist);
+    drawProps(camDist);
+    drawObstacles(camDist);
+    drawFinishLine(camDist);
+
+    // Hit flash overlay
+    if (hitFlash > 0) {
+        ctx.fillStyle = `rgba(255,0,0,${hitFlash * 0.04})`;
+        ctx.fillRect(0, 0, CW, CH);
+    }
+
+    // Draw all vehicles sorted by dist (further from cam = drawn first)
+    const vehicles = [player, ...aiCars];
+    vehicles.sort((a,b) => b.dist - a.dist);
+
+    vehicles.forEach(v => {
+        const screenX = CW/2 + v.x;
+        const distDiff = v.dist - player.dist;
+        const screenY = CH * CAM_Y_RATIO - distDiff * 0.9;
+        if (screenY < HUD_H-60 || screenY > CH+60) return;
+        drawBike(screenX, screenY, v.color, v.angle, v.speed, v.isPlayer);
+    });
+
+    drawParticles();
+
+    if (gameState === 'countdown') {
+        drawCountdown();
+    } else if (gameState === 'playing') {
+        updatePlayer(dt);
+        aiCars.forEach(a => updateAI(a, dt));
+        updateHUD();
+        elapsedMs = Date.now() - startTime;
+    }
+
+    requestAnimationFrame(loop);
+}
+
+// ---- COUNTDOWN ----
+function runCountdown() {
+    gameState = 'countdown';
+    countdown = 3;
+    const tick = () => {
+        if (countdown > 0) {
+            countdown--;
+            setTimeout(tick, 1000);
+        } else {
+            gameState = 'playing';
+            startTime = Date.now();
+        }
+    };
+    setTimeout(tick, 1000);
+}
+
+// ---- START / END ----
+function startGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('result-screen').style.display = 'none';
+    document.getElementById('hud').style.display = 'flex';
+
+    // Show touch controls on mobile
+    if ('ontouchstart' in window) {
+        document.getElementById('touch-controls').style.display = 'flex';
+    }
+
+    player   = makePlayer();
+    aiCars   = [
+        makeAI('#ef4444', 6.2 + Math.random()*0.4, -LANE_W,      'රතු රථය'),
+        makeAI('#3b82f6', 6.5 + Math.random()*0.4,  LANE_W,      'නිල් රථය'),
+        makeAI('#a855f7', 6.0 + Math.random()*0.5, -LANE_W*0.4, 'දම් රථය'),
+        makeAI('#22c55e', 6.3 + Math.random()*0.4,  LANE_W*0.4, 'කොළ රථය'),
+        makeAI('#f97316', 5.8 + Math.random()*0.6, -LANE_W*0.8, 'ส้ม රථය'),
+        makeAI('#ec4899', 6.4 + Math.random()*0.4,  LANE_W*0.8, 'රෝස රථය'),
+    ];
+    finishOrder = [];
+    particles = [];
+    generateProps();
+    generateObstacles();
+    keys.up=keys.down=keys.left=keys.right=false;
+
+    if (winEffect) { try { winEffect.pause(); winEffect.currentTime = 0; } catch(e){} }
+    try { bgMusic.currentTime = 0; bgMusic.play(); } catch(e) {}
+
+    gameState = 'countdown';
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+    runCountdown();
+}
+
+function endRace() {
+    gameState = 'done';
+    try { bgMusic.pause(); } catch(e) {}
+
+    const pos = finishOrder.indexOf(player) + 1;
+    const actualPos = pos === 0 ? getPosition() : pos;
+    const ms = elapsedMs;
+    const s = Math.floor(ms/1000), m = Math.floor(s/60);
+
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('touch-controls').style.display = 'none';
+
+    const rs = document.getElementById('result-screen');
+    rs.style.display = 'flex';
+
+    const won = actualPos === 1;
+    if (won) { 
+        try { 
+            winEffect = new Audio('cele.mp3');
+            winEffect.play(); 
+        } catch(e) {} 
+    }
+    document.getElementById('res-emoji').textContent = won ? '🏆' : '😔';
+    document.getElementById('res-title').textContent = won ? 'ජය!' : 'RETRY';
+    document.getElementById('res-sub').textContent = won
+        ? 'නියමයි! ඔබ ප්‍රථම ස්ථානය ලබා ගත්තා!'
+        : `ඔබ ${ordinal(actualPos)} ස්ථානයේ ජය!`;
+
+    rs.style.background = won
+        ? 'linear-gradient(160deg,rgba(0,50,0,0.97),rgba(0,0,0,0.97))'
+        : 'linear-gradient(160deg,rgba(50,0,0,0.97),rgba(0,0,0,0.97))';
+
+    document.getElementById('s-pos').textContent   = ordinal(actualPos);
+    document.getElementById('s-time').textContent  = `${m}:${String(s%60).padStart(2,'0')}`;
+    document.getElementById('s-speed').textContent = Math.round(player.topSpeed*15);
+    document.getElementById('s-laps').textContent  = Math.min(player.lap, LAPS);
+}
+</script>
+<footer style="position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-family: sans-serif; font-size: 0.8rem; color: white; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 9998; pointer-events: auto;">
+    Developed by <a href="https://janiruhansaga.com/" target="_blank" style="color: #FFD700; text-decoration: none; font-weight: bold;">JAniruhansaga</a>
+</footer>
+</body>
+</html>
